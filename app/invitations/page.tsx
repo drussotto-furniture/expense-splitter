@@ -21,6 +21,7 @@ export default async function InvitationsPage() {
     .single()
 
   // Fetch pending invitations for this user's email
+  console.log('Fetching invitations for email:', profile?.email)
   const { data: invitations, error: invitationsError } = await supabase
     .from('invitations')
     .select(`
@@ -39,27 +40,33 @@ export default async function InvitationsPage() {
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
+  console.log('Invitations query result:', invitations)
+  console.log('Invitations count:', invitations?.length)
   if (invitationsError) {
     console.error('Error fetching invitations:', invitationsError)
   }
 
   // Normalize the data structure (Supabase can return arrays or objects for foreign keys)
   const normalizedInvitations = invitations?.map((inv: any) => {
+    console.log('Processing invitation:', inv)
     const group = Array.isArray(inv.group) ? inv.group[0] : inv.group
     const inviter = Array.isArray(inv.inviter) ? inv.inviter[0] : inv.inviter
 
-    // Ensure we have valid data
+    console.log('Group:', group)
+    console.log('Inviter:', inviter)
+
+    // Ensure we have valid data - but keep for now to see what's wrong
     if (!group || !inviter) {
-      console.error('Invalid invitation data:', inv)
-      return null
+      console.error('Invalid invitation data - missing group or inviter:', { inv, group, inviter })
+      // Don't filter out yet, let's see the error
     }
 
     return {
       ...inv,
-      group,
-      inviter,
+      group: group || { id: inv.group_id, name: 'Unknown Group', base_currency: 'USD' },
+      inviter: inviter || { full_name: 'Unknown', email: 'unknown@example.com' },
     }
-  }).filter(Boolean) // Remove any null entries
+  })
 
   const invitationCount = normalizedInvitations?.length || 0
 
