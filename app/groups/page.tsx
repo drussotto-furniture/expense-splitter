@@ -1,10 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Users, LogOut, Mail, UserPlus } from 'lucide-react'
+import { Users } from 'lucide-react'
 import CreateGroupButton from '@/components/groups/CreateGroupButton'
-import LogoutButton from '@/components/auth/LogoutButton'
-import NotificationBell from '@/components/notifications/NotificationBell'
+import AppHeader from '@/components/navigation/AppHeader'
 
 export default async function GroupsPage() {
   const supabase = await createClient()
@@ -54,38 +53,11 @@ export default async function GroupsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Expense Splitter</h1>
-            <p className="text-sm text-gray-600">Welcome, {profile?.full_name || profile?.email}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/friends"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              <UserPlus className="h-4 w-4" />
-              Friends
-            </Link>
-            <NotificationBell />
-            <Link
-              href="/invitations"
-              className="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              <Mail className="h-4 w-4" />
-              Invitations
-              {pendingInvitations && pendingInvitations > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {pendingInvitations}
-                </span>
-              )}
-            </Link>
-            <LogoutButton />
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        userName={profile?.full_name}
+        userEmail={profile?.email}
+        pendingInvitations={pendingInvitations || 0}
+      />
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

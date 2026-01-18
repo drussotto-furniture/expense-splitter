@@ -1,15 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Users, DollarSign } from 'lucide-react'
+import { ArrowLeft, Users } from 'lucide-react'
 import ExpenseList from '@/components/expenses/ExpenseList'
 import AddExpenseButton from '@/components/expenses/AddExpenseButton'
 import BalancesCard from '@/components/settlements/BalancesCard'
-import LogoutButton from '@/components/auth/LogoutButton'
+import AppHeader from '@/components/navigation/AppHeader'
 import InviteMemberButton from '@/components/groups/InviteMemberButton'
 import DeleteGroupButton from '@/components/groups/DeleteGroupButton'
 import RemoveMemberButton from '@/components/groups/RemoveMemberButton'
-import NotificationBell from '@/components/notifications/NotificationBell'
 import ActivityFeed from '@/components/activity/ActivityFeed'
 import { getGroupActivities } from '@/lib/actions/activity'
 import GroupTabs from '@/components/groups/GroupTabs'
@@ -49,6 +48,20 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   if (!membership) {
     redirect('/groups')
   }
+
+  // Get user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', user.id)
+    .single()
+
+  // Count pending invitations
+  const { count: pendingInvitations } = await supabase
+    .from('invitations')
+    .select('*', { count: 'exact', head: true })
+    .eq('invited_email', profile?.email)
+    .eq('status', 'pending')
 
   // Fetch group members
   const { data: members } = await supabase
@@ -111,37 +124,39 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
+      <AppHeader
+        userName={profile?.full_name}
+        userEmail={profile?.email}
+        pendingInvitations={pendingInvitations || 0}
+      />
+
+      {/* Group subheader */}
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Link
                 href="/groups"
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{group.name}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{group.name}</h1>
                 <p className="text-sm text-gray-600">{group.base_currency}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <NotificationBell />
-              {group.created_by === user.id && (
-                <DeleteGroupButton
-                  groupId={id}
-                  groupName={group.name}
-                  memberCount={members?.length || 0}
-                  expenseCount={expenses?.length || 0}
-                />
-              )}
-              <LogoutButton />
-            </div>
+            {group.created_by === user.id && (
+              <DeleteGroupButton
+                groupId={id}
+                groupName={group.name}
+                memberCount={members?.length || 0}
+                expenseCount={expenses?.length || 0}
+              />
+            )}
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

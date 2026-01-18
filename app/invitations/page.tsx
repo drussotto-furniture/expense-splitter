@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import InvitationCard from '@/components/invitations/InvitationCard'
-import LogoutButton from '@/components/auth/LogoutButton'
+import AppHeader from '@/components/navigation/AppHeader'
 
 export default async function InvitationsPage() {
   const supabase = await createClient()
@@ -13,10 +13,10 @@ export default async function InvitationsPage() {
     redirect('/login')
   }
 
-  // Get user's email
+  // Get user's email and full name
   const { data: profile } = await supabase
     .from('profiles')
-    .select('email')
+    .select('email, full_name')
     .eq('id', user.id)
     .single()
 
@@ -39,23 +39,15 @@ export default async function InvitationsPage() {
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
+  const invitationCount = invitations?.length || 0
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/groups"
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Invitations</h1>
-          </div>
-          <LogoutButton />
-        </div>
-      </header>
+      <AppHeader
+        userName={profile?.full_name}
+        userEmail={profile?.email}
+        pendingInvitations={invitationCount}
+      />
 
       {/* Main content */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
