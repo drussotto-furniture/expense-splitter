@@ -155,7 +155,19 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
       case 'settlement_created':
         return (
           <div>
-            <span className="font-semibold">{userName}</span> recorded a settlement
+            <div>
+              <span className="font-semibold">{userName}</span> recorded a settlement
+            </div>
+            {details.from_user && details.to_user && (
+              <div className="mt-1 text-xs text-gray-600">
+                • {details.from_user} paid {details.to_user}
+              </div>
+            )}
+            {details.amount && details.currency && (
+              <div className="mt-0.5 text-xs text-gray-600">
+                • Amount: {details.currency} {details.amount}
+              </div>
+            )}
           </div>
         )
       default:

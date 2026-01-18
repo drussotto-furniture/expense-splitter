@@ -39,7 +39,60 @@ export async function markSettlementPaid({
     return { success: false, error: 'You are not a member of this group' }
   }
 
-  // Create a settlement record
+  // Get user profiles for names
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', [fromUserId, toUserId])
+
+  const fromProfile = profiles?.find(p => p.id === fromUserId)
+  const toProfile = profiles?.find(p => p.id === toUserId)
+
+  const fromName = fromProfile?.full_name || fromProfile?.email || 'Unknown'
+  const toName = toProfile?.full_name || toProfile?.email || 'Unknown'
+
+  // Create a settlement expense to zero out the balance
+  // This expense represents the payment from debtor to creditor
+  const { data: expense, error: expenseError } = await supabase
+    .from('expenses')
+    .insert({
+      group_id: groupId,
+      description: `Settlement: ${fromName} paid ${toName}`,
+      amount,
+      currency,
+      paid_by: fromUserId, // The person who owes money is "paying"
+      category: 'Settlement',
+      expense_date: new Date().toISOString().split('T')[0],
+      split_type: 'personal',
+      created_by: user.id,
+    })
+    .select()
+    .single()
+
+  if (expenseError) {
+    console.error('Error creating settlement expense:', expenseError)
+    return { success: false, error: 'Failed to record settlement' }
+  }
+
+  // Create a split that assigns the full amount to the person who was owed money
+  // This effectively zeros out the balance between the two people
+  const { error: splitError } = await supabase
+    .from('expense_splits')
+    .insert({
+      expense_id: expense.id,
+      user_id: toUserId, // The person who was owed money
+      amount,
+      percentage: null,
+    })
+
+  if (splitError) {
+    console.error('Error creating settlement split:', splitError)
+    // Clean up the expense we just created
+    await supabase.from('expenses').delete().eq('id', expense.id)
+    return { success: false, error: 'Failed to record settlement' }
+  }
+
+  // Create a settlement record for tracking
   const { data: settlement, error: settlementError } = await supabase
     .from('settlements')
     .insert({
@@ -55,34 +108,26 @@ export async function markSettlementPaid({
     .single()
 
   if (settlementError) {
-    console.error('Error creating settlement:', settlementError)
-    return { success: false, error: 'Failed to record settlement' }
+    console.error('Error creating settlement record:', settlementError)
+    // Continue anyway - the expense and split are more important
   }
-
-  // Get user profiles for the activity log
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, full_name, email')
-    .in('id', [fromUserId, toUserId])
-
-  const fromProfile = profiles?.find(p => p.id === fromUserId)
-  const toProfile = profiles?.find(p => p.id === toUserId)
 
   // Log activity
   await logActivity({
     groupId,
     activityType: 'settlement_created',
     details: {
-      from_user: fromProfile?.full_name || fromProfile?.email,
-      to_user: toProfile?.full_name || toProfile?.email,
+      from_user: fromName,
+      to_user: toName,
       amount,
       currency,
-      settlement_id: settlement.id,
+      settlement_id: settlement?.id,
+      expense_id: expense.id,
     },
   })
 
   // Revalidate the group page to refresh balances
   revalidatePath(`/groups/${groupId}`)
 
-  return { success: true, settlement }
+  return { success: true, settlement, expense }
 }
