@@ -91,8 +91,8 @@ export default async function FriendsPage() {
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
-  // Fetch pending friend requests sent
-  const { data: sentRequests, error: sentRequestsError } = await supabase
+  // Fetch pending friend requests sent (to existing users)
+  const { data: sentRequests } = await supabase
     .from('friends')
     .select(`
       *,
@@ -106,6 +106,14 @@ export default async function FriendsPage() {
     .eq('user_id', user.id)
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
+
+  // Fetch friend invitations sent (to non-users)
+  const { data: sentInvitations } = await supabase
+    .from('friend_invitations')
+    .select('*')
+    .eq('inviter_id', user.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false})
 
   // Combine all accepted friends (remove duplicates)
   const allFriends = [
@@ -197,6 +205,38 @@ export default async function FriendsPage() {
                   isReceived={false}
                   currentUserId={user.id}
                 />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Pending Friend Invitations (sent to non-users) */}
+        {sentInvitations && sentInvitations.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Pending Friend Invitations ({sentInvitations.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sentInvitations.map((invitation) => (
+                <div key={invitation.id} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        {invitation.invited_email}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Invitation sent
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(invitation.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Mail className="h-4 w-4" />
+                    <span>Waiting for them to sign up</span>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

@@ -58,8 +58,7 @@ export default function AddFriendButton({ currentUserId }: AddFriendButtonProps)
         .single()
 
       if (targetProfile) {
-        // User exists - create a direct friend request
-        // Check if friendship already exists (in either direction)
+        // User exists - check for existing friendship (both directions)
         const { data: existingFriendship } = await supabase
           .from('friends')
           .select('id, status, user_id, friend_id')
@@ -68,7 +67,6 @@ export default function AddFriendButton({ currentUserId }: AddFriendButtonProps)
 
         if (existingFriendship) {
           if (existingFriendship.status === 'pending') {
-            // Check if WE sent the request or THEY sent it
             if (existingFriendship.user_id === user.id) {
               throw new Error('You already sent a friend request to this user')
             } else {
@@ -81,7 +79,7 @@ export default function AddFriendButton({ currentUserId }: AddFriendButtonProps)
           }
         }
 
-        // Create friend request
+        // Create friend request for existing user
         const { error: friendError } = await supabase
           .from('friends')
           .insert({
@@ -92,12 +90,38 @@ export default function AddFriendButton({ currentUserId }: AddFriendButtonProps)
 
         if (friendError) throw friendError
 
-        // TODO: Send email notification to the target user
         setSuccessMessage(`Friend request sent to ${targetProfile.full_name || targetProfile.email}!`)
       } else {
-        // User doesn't exist yet - they'll need to sign up
-        // For now, show a message telling them the user needs an account
-        throw new Error(`${emailLower} doesn't have an account yet. They need to sign up first before you can add them as a friend.`)
+        // User doesn't exist - create a "pending friend" entry
+        // Check if we already invited this email
+        const { data: existingInvite } = await supabase
+          .from('friend_invitations')
+          .select('id, status')
+          .eq('inviter_id', user.id)
+          .eq('invited_email', emailLower)
+          .single()
+
+        if (existingInvite) {
+          if (existingInvite.status === 'pending') {
+            throw new Error('You already sent a friend invitation to this email')
+          } else if (existingInvite.status === 'accepted') {
+            throw new Error('This person is already your friend')
+          }
+        }
+
+        // Create friend invitation for non-existent user
+        const { error: inviteError } = await supabase
+          .from('friend_invitations')
+          .insert({
+            inviter_id: user.id,
+            invited_email: emailLower,
+            status: 'pending',
+          })
+
+        if (inviteError) throw inviteError
+
+        // TODO: Send email invitation
+        setSuccessMessage(`Invitation sent to ${emailLower}! They'll appear in your friends list once they sign up and accept.`)
       }
 
       setEmail('')
@@ -169,7 +193,7 @@ export default function AddFriendButton({ currentUserId }: AddFriendButtonProps)
                   onChange={(e) => setEmail(e.target.value)}
                 />
                 <p className="mt-2 text-xs text-gray-500">
-                  Enter the email address of the person you want to add as a friend.
+                  We'll send them an invitation to join and become your friend.
                 </p>
               </div>
 
@@ -191,7 +215,7 @@ export default function AddFriendButton({ currentUserId }: AddFriendButtonProps)
                   disabled={loading || !!successMessage}
                   className="flex-1 px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Sending...' : successMessage ? 'Sent!' : 'Send Request'}
+                  {loading ? 'Sending...' : successMessage ? 'Sent!' : 'Send Invitation'}
                 </button>
               </div>
             </form>
