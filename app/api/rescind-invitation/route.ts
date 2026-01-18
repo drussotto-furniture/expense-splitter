@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -39,7 +41,9 @@ export async function POST(request: Request) {
 
     if (deleteError) throw deleteError
 
-    return NextResponse.json({ success: true })
+    const response = NextResponse.json({ success: true })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return response
   } catch (error: any) {
     console.error('Rescind invitation error:', error)
     return NextResponse.json({ error: error.message || 'Failed to rescind invitation' }, { status: 500 })

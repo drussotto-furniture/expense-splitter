@@ -7,6 +7,9 @@ import FriendCard from '@/components/friends/FriendCard'
 import GroupInvitationCard from '@/components/friends/GroupInvitationCard'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function FriendsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
