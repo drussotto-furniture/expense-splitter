@@ -25,7 +25,7 @@ interface Split {
 }
 
 interface EditExpenseButtonProps {
-  expense: Pick<Expense, 'id' | 'description' | 'amount' | 'currency' | 'category' | 'notes' | 'receipt_url' | 'expense_date' | 'split_type'>
+  expense: Pick<Expense, 'id' | 'description' | 'amount' | 'currency' | 'category' | 'notes' | 'receipt_url' | 'expense_date' | 'split_type' | 'paid_by'>
   splits: Split[]
   members: Member[]
   groupId: string
@@ -42,6 +42,7 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
   const [description, setDescription] = useState(expense.description)
   const [amount, setAmount] = useState(expense.amount.toString())
   const [category, setCategory] = useState(expense.category)
+  const [paidBy, setPaidBy] = useState(expense.paid_by)
   const [notes, setNotes] = useState(expense.notes || '')
   const [expenseDate, setExpenseDate] = useState(expense.expense_date)
   const [splitType, setSplitType] = useState<'equal' | 'personal' | 'custom' | 'percentage' | 'shares'>(
@@ -128,6 +129,7 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
           description,
           amount: amountNum,
           category,
+          paid_by: paidBy,
           notes: notes || null,
           expense_date: expenseDate,
           split_type: splitType,
@@ -375,6 +377,24 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
                     <option value="Groceries">Groceries</option>
                     <option value="Utilities">Utilities</option>
                     <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Paid By
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={paidBy}
+                    onChange={(e) => setPaidBy(e.target.value)}
+                    required
+                  >
+                    {activeMembers.filter(m => m.user_id).map((member) => (
+                      <option key={member.user_id!} value={member.user_id!}>
+                        {member.profile?.full_name || member.profile?.email || 'Unknown User'}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

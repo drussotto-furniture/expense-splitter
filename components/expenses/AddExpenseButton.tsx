@@ -35,6 +35,7 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('Food & Dining')
+  const [paidBy, setPaidBy] = useState('')
   const [notes, setNotes] = useState('')
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0])
   const [splitType, setSplitType] = useState<'equal' | 'personal' | 'custom' | 'percentage' | 'shares'>('equal')
@@ -62,6 +63,9 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
         throw new Error('Invalid amount')
       }
 
+      // Use paidBy if set, otherwise default to current user
+      const payerId = paidBy || user.id
+
       // Create the expense
       const { data: expense, error: expenseError } = await supabase
         .from('expenses')
@@ -70,7 +74,7 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
           description,
           amount: amountNum,
           currency,
-          paid_by: user.id,
+          paid_by: payerId,
           category,
           notes: notes || null,
           expense_date: expenseDate,
@@ -217,10 +221,12 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
     }
   }
 
-  const resetForm = () => {
+  const resetForm = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
     setDescription('')
     setAmount('')
     setCategory('Food & Dining')
+    setPaidBy(user?.id || '')
     setNotes('')
     setExpenseDate(new Date().toISOString().split('T')[0])
     setSplitType('equal')
@@ -329,6 +335,25 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
                     <option value="Groceries">Groceries</option>
                     <option value="Utilities">Utilities</option>
                     <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Paid By
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                    value={paidBy}
+                    onChange={(e) => setPaidBy(e.target.value)}
+                    required
+                  >
+                    <option value="">Select who paid</option>
+                    {activeMembers.filter(m => m.user_id).map((member) => (
+                      <option key={member.user_id!} value={member.user_id!}>
+                        {member.profile?.full_name || member.profile?.email || 'Unknown User'}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
