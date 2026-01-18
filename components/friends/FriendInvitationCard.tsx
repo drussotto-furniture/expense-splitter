@@ -35,13 +35,17 @@ export default function FriendInvitationCard({ invitation }: FriendInvitationCar
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to rescind invitation')
+        throw new Error(data.error || 'Failed to rescind invitation')
       }
 
-      setMessage('Invitation rescinded')
+      // Show how many rows were deleted for debugging
+      setMessage(`Invitation rescinded (deleted: ${data.deleted})`)
       setIsRescinded(true)
+
+      console.log('Rescind response:', data)
       setTimeout(() => {
         // Force cache bust with timestamp
         window.location.href = window.location.pathname + '?t=' + Date.now()
