@@ -123,6 +123,16 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
           amount: amountNum,
         }]
       } else if (splitType === 'custom') {
+        // Validate that ALL selected members (including pending) add up to total
+        const totalCustom = selectedMembers.reduce((sum, memberId) => {
+          return sum + parseFloat(customAmounts[memberId] || '0')
+        }, 0)
+
+        if (Math.abs(totalCustom - amountNum) > 0.01) {
+          throw new Error(`Custom amounts (${totalCustom}) must equal total amount (${amountNum})`)
+        }
+
+        // But only create splits for members with user_id
         newSplits = validSelectedMembers.map(memberId => {
           const member = activeMembers.find(m => getMemberId(m) === memberId)
           return {
@@ -130,11 +140,6 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
             amount: parseFloat(customAmounts[memberId] || '0'),
           }
         })
-
-        const totalCustom = newSplits.reduce((sum, s) => sum + s.amount, 0)
-        if (Math.abs(totalCustom - amountNum) > 0.01) {
-          throw new Error(`Custom amounts (${totalCustom}) must equal total amount (${amountNum})`)
-        }
       }
 
       // Insert new splits
