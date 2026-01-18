@@ -43,7 +43,8 @@ export default function FriendInvitationCard({ invitation }: FriendInvitationCar
       setMessage('Invitation rescinded')
       setIsRescinded(true)
       setTimeout(() => {
-        window.location.reload()
+        // Force cache bust with timestamp
+        window.location.href = window.location.pathname + '?t=' + Date.now()
       }, 1000)
     } catch (error: any) {
       setMessage(error.message || 'Failed to rescind invitation')

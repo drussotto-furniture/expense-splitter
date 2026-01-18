@@ -9,6 +9,7 @@ read -p "Are you sure you want to proceed? (y/N) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
+    cd "$(dirname "$0")/.." || exit 1
     echo "Deleting old SQL files..."
     rm -f *.sql
 

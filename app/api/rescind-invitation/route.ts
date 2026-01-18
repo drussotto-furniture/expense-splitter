@@ -34,15 +34,20 @@ export async function POST(request: Request) {
     }
 
     // Delete the invitation
-    const { error: deleteError } = await supabase
+    const { error: deleteError, count } = await supabase
       .from('invitations')
       .delete()
       .eq('id', invitationId)
+      .select()
 
     if (deleteError) throw deleteError
 
-    const response = NextResponse.json({ success: true })
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    console.log(`Deleted ${count} invitation(s) with ID: ${invitationId}`)
+
+    const response = NextResponse.json({ success: true, deleted: count })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
     return response
   } catch (error: any) {
     console.error('Rescind invitation error:', error)
