@@ -8,17 +8,19 @@ import type { Expense } from '@/types'
 
 interface Member {
   id: string
-  user_id: string
+  user_id: string | null
   is_active: boolean
+  status?: 'active' | 'pending' | 'inactive'
+  pending_email?: string | null
   profile: {
     id: string
     full_name: string | null
     email: string
-  }
+  } | null
 }
 
 interface Split {
-  user_id: string
+  user_id: string | null
   amount: number
 }
 
@@ -30,8 +32,11 @@ interface EditExpenseButtonProps {
 }
 
 export default function EditExpenseButton({ expense, splits, members, groupId }: EditExpenseButtonProps) {
-  // Only include active members with user_id (exclude pending and inactive)
-  const activeMembers = members.filter(m => m.is_active !== false && m.user_id)
+  // Include active and pending members (exclude only inactive)
+  const activeMembers = members.filter(m => m.is_active !== false)
+
+  // Helper to get member identifier (user_id for active, id for pending)
+  const getMemberId = (member: Member) => member.user_id || member.id
 
   const [isOpen, setIsOpen] = useState(false)
   const [description, setDescription] = useState(expense.description)
@@ -42,9 +47,13 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
   const [splitType, setSplitType] = useState<'equal' | 'personal' | 'custom'>(
     expense.split_type === 'percentage' ? 'custom' : expense.split_type
   )
-  const [selectedMembers, setSelectedMembers] = useState<string[]>(splits.map(s => s.user_id))
+  const [selectedMembers, setSelectedMembers] = useState<string[]>(splits.map(s => s.user_id || '').filter(Boolean))
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>(
-    splits.reduce((acc, split) => ({ ...acc, [split.user_id]: split.amount.toString() }), {})
+    splits.reduce((acc, split) => {
+      const memberId = split.user_id || ''
+      if (memberId) acc[memberId] = split.amount.toString()
+      return acc
+    }, {} as Record<string, string>)
   )
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
@@ -347,34 +356,39 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
                       Split Between
                     </label>
                     <div className="space-y-2">
-                      {activeMembers.map((member) => (
-                        <div key={member.user_id} className="flex items-center gap-2">
+                      {activeMembers.map((member) => {
+                        const memberId = getMemberId(member)
+                        return (
+                        <div key={memberId} className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            checked={selectedMembers.includes(member.user_id)}
-                            onChange={() => toggleMember(member.user_id)}
+                            checked={selectedMembers.includes(memberId)}
+                            onChange={() => toggleMember(memberId)}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />
                           <span className="text-sm text-gray-900">
-                            {member.profile?.full_name || member.profile?.email || 'Unknown User'}
+                            {member.status === 'pending'
+                              ? `${member.pending_email} (Pending)`
+                              : (member.profile?.full_name || member.profile?.email || 'Unknown User')}
                           </span>
-                          {splitType === 'custom' && selectedMembers.includes(member.user_id) && (
+                          {splitType === 'custom' && selectedMembers.includes(memberId) && (
                             <input
                               type="number"
                               step="0.01"
                               className="ml-auto w-24 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="0.00"
-                              value={customAmounts[member.user_id] || ''}
+                              value={customAmounts[memberId] || ''}
                               onChange={(e) =>
                                 setCustomAmounts({
                                   ...customAmounts,
-                                  [member.user_id]: e.target.value,
+                                  [memberId]: e.target.value,
                                 })
                               }
                             />
                           )}
                         </div>
-                      ))}
+                      )})}
+
                     </div>
                   </div>
                 )}
