@@ -224,8 +224,10 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
     setNotes('')
     setExpenseDate(new Date().toISOString().split('T')[0])
     setSplitType('equal')
-    setSelectedMembers(activeMembers.map(m => m.user_id))
+    setSelectedMembers(activeMembers.map(m => getMemberId(m)))
     setCustomAmounts({})
+    setPercentages({})
+    setShares({})
     setReceiptFile(null)
   }
 
