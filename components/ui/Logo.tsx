@@ -8,26 +8,24 @@ interface LogoProps {
 
 export default function Logo({ size = 'md', className = '' }: LogoProps) {
   const sizes = {
-    sm: { width: 200, height: 54 },
-    md: { width: 280, height: 75 },
-    lg: { width: 360, height: 96 },
-    xl: { width: 480, height: 128 },
+    sm: { width: 152, height: 50 },
+    md: { width: 183, height: 60 },
+    lg: { width: 195, height: 64 },
+    xl: { width: 244, height: 80 },
   }
 
   const { width, height } = sizes[size]
 
   return (
-    <div className={`flex items-center justify-center ${className}`}>
-      {/* Logo Image */}
-      <div className="relative" style={{ width, height }}>
-        <Image
-          src="/carvalytics-logo.png"
-          alt="Carvalytics Expense Splitter"
-          fill
-          priority
-          className="object-contain"
-        />
-      </div>
+    <div className={className}>
+      <Image
+        src="/carvalytics-logo.png"
+        alt="Carvalytics Expense Splitter"
+        width={width}
+        height={height}
+        priority
+        className="object-contain"
+      />
     </div>
   )
 }
