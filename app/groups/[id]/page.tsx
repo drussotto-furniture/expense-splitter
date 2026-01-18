@@ -83,6 +83,10 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         id,
         full_name,
         email
+      ),
+      pending_member:group_members!expense_splits_pending_member_id_fkey (
+        id,
+        pending_email
       )
     `)
     .in('expense_id', expenses?.map(e => e.id) || [])

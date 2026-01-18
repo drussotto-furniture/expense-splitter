@@ -26,13 +26,18 @@ interface Expense {
 interface Split {
   id: string
   expense_id: string
-  user_id: string
+  user_id: string | null
+  pending_member_id: string | null
   amount: number
   profile: {
     id: string
     full_name: string | null
     email: string
-  }
+  } | null
+  pending_member: {
+    id: string
+    pending_email: string | null
+  } | null
 }
 
 interface Member {
@@ -150,7 +155,7 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
               </div>
               <div className="flex flex-wrap gap-2">
                 {expenseSplits.map((split) => {
-                  const isActive = isMemberActive(split.user_id)
+                  const isActive = split.user_id ? isMemberActive(split.user_id) : true
                   return (
                     <span
                       key={split.id}
@@ -160,7 +165,9 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
                           : 'bg-gray-100 text-gray-600'
                       }`}
                     >
-                      {split.profile?.full_name || split.profile?.email || 'Unknown User'}
+                      {split.pending_member?.pending_email
+                        ? `${split.pending_member.pending_email} (Pending)`
+                        : (split.profile?.full_name || split.profile?.email || 'Unknown User')}
                       {!isActive && ' (Inactive)'}: {formatCurrency(split.amount, expense.currency)}
                     </span>
                   )

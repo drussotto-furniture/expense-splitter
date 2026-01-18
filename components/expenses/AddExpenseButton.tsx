@@ -63,8 +63,9 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
         throw new Error('Invalid amount')
       }
 
-      // Use paidBy if set, otherwise default to current user
+      // Determine who paid - could be active member (user_id) or pending member (group_members.id)
       const payerId = paidBy || user.id
+      const payerMember = activeMembers.find(m => getMemberId(m) === payerId)
 
       // Create the expense
       const { data: expense, error: expenseError } = await supabase
@@ -74,7 +75,10 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
           description,
           amount: amountNum,
           currency,
-          paid_by: payerId,
+          ...(payerMember?.user_id
+            ? { paid_by: payerMember.user_id, paid_by_pending_member: null }
+            : { paid_by: null, paid_by_pending_member: payerMember!.id }
+          ),
           category,
           notes: notes || null,
           expense_date: expenseDate,
@@ -85,21 +89,15 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
 
       if (expenseError) throw expenseError
 
-      // Calculate splits
-      // Filter out pending members (who don't have user_id) since they can't have expense splits
-      const validSelectedMembers = selectedMembers.filter(memberId => {
-        const member = activeMembers.find(m => getMemberId(m) === memberId)
-        return member?.user_id // Only include if they have a user_id
-      })
-
-      let splits: { user_id: string; amount: number }[] = []
+      // Calculate splits for both active and pending members
+      let splits: { user_id?: string; pending_member_id?: string; amount: number }[] = []
 
       if (splitType === 'equal') {
-        const splitAmount = amountNum / validSelectedMembers.length
-        splits = validSelectedMembers.map(memberId => {
+        const splitAmount = amountNum / selectedMembers.length
+        splits = selectedMembers.map(memberId => {
           const member = activeMembers.find(m => getMemberId(m) === memberId)
           return {
-            user_id: member!.user_id!,
+            ...(member?.user_id ? { user_id: member.user_id } : { pending_member_id: member!.id }),
             amount: parseFloat(splitAmount.toFixed(2)),
           }
         })
@@ -109,7 +107,7 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
           amount: amountNum,
         }]
       } else if (splitType === 'custom') {
-        // Validate that ALL selected members (including pending) add up to total
+        // Validate that ALL selected members add up to total
         const totalCustom = selectedMembers.reduce((sum, memberId) => {
           return sum + parseFloat(customAmounts[memberId] || '0')
         }, 0)
@@ -118,16 +116,16 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
           throw new Error(`Custom amounts (${totalCustom}) must equal total amount (${amountNum})`)
         }
 
-        // But only create splits for members with user_id
-        splits = validSelectedMembers.map(memberId => {
+        // Create splits for all members
+        splits = selectedMembers.map(memberId => {
           const member = activeMembers.find(m => getMemberId(m) === memberId)
           return {
-            user_id: member!.user_id!,
+            ...(member?.user_id ? { user_id: member.user_id } : { pending_member_id: member!.id }),
             amount: parseFloat(customAmounts[memberId] || '0'),
           }
         })
       } else if (splitType === 'percentage') {
-        // Validate that ALL selected members (including pending) add up to 100%
+        // Validate that ALL selected members add up to 100%
         const totalPercentage = selectedMembers.reduce((sum, memberId) => {
           return sum + parseFloat(percentages[memberId] || '0')
         }, 0)
@@ -136,18 +134,18 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
           throw new Error(`Percentages (${totalPercentage.toFixed(1)}%) must equal 100%`)
         }
 
-        // But only create splits for members with user_id
-        splits = validSelectedMembers.map(memberId => {
+        // Create splits for all members
+        splits = selectedMembers.map(memberId => {
           const member = activeMembers.find(m => getMemberId(m) === memberId)
           const percentage = parseFloat(percentages[memberId] || '0')
           const amount = (amountNum * percentage) / 100
           return {
-            user_id: member!.user_id!,
+            ...(member?.user_id ? { user_id: member.user_id } : { pending_member_id: member!.id }),
             amount: parseFloat(amount.toFixed(2)),
           }
         })
       } else if (splitType === 'shares') {
-        // Calculate total shares (including pending members for validation)
+        // Calculate total shares
         const totalShares = selectedMembers.reduce((sum, memberId) => {
           return sum + parseFloat(shares[memberId] || '0')
         }, 0)
@@ -156,13 +154,13 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
           throw new Error('Total shares must be greater than 0')
         }
 
-        // But only create splits for members with user_id
-        splits = validSelectedMembers.map(memberId => {
+        // Create splits for all members
+        splits = selectedMembers.map(memberId => {
           const member = activeMembers.find(m => getMemberId(m) === memberId)
           const memberShares = parseFloat(shares[memberId] || '0')
           const amount = (amountNum * memberShares) / totalShares
           return {
-            user_id: member!.user_id!,
+            ...(member?.user_id ? { user_id: member.user_id } : { pending_member_id: member!.id }),
             amount: parseFloat(amount.toFixed(2)),
           }
         })
@@ -349,11 +347,17 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
                     required
                   >
                     <option value="">Select who paid</option>
-                    {activeMembers.filter(m => m.user_id).map((member) => (
-                      <option key={member.user_id!} value={member.user_id!}>
-                        {member.profile?.full_name || member.profile?.email || 'Unknown User'}
-                      </option>
-                    ))}
+                    {activeMembers.map((member) => {
+                      const memberId = getMemberId(member)
+                      const displayName = member.status === 'pending'
+                        ? `${member.pending_email} (Pending)`
+                        : (member.profile?.full_name || member.profile?.email || 'Unknown User')
+                      return (
+                        <option key={memberId} value={memberId}>
+                          {displayName}
+                        </option>
+                      )
+                    })}
                   </select>
                 </div>
 
