@@ -35,7 +35,7 @@ export default function AppHeader({ userName, userEmail, pendingInvitations = 0 
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/groups" className="flex items-center">
-              <Logo size="md" />
+              <Logo size="sm" />
             </Link>
           </div>
 
