@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     // Send email
     const { data, error } = await resend.emails.send({
-      from: 'Expense Splitter <onboarding@resend.dev>', // You'll need to update this with your verified domain
+      from: 'Carvalytics Expense Splitter <invites@carvalytics.com>',
       to: invitedEmail,
       subject: `${inviterName} invited you to join "${groupName}"`,
       html: `

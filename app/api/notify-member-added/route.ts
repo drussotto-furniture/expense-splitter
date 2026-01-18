@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     // Send email notification
     const { data, error } = await resend.emails.send({
-      from: 'Expense Splitter <onboarding@resend.dev>',
+      from: 'Carvalytics Expense Splitter <invites@carvalytics.com>',
       to: addedUserEmail,
       subject: `${adderName} added you to "${groupName}"`,
       html: `
