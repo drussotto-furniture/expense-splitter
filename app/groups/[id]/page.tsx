@@ -12,6 +12,8 @@ import RemoveMemberButton from '@/components/groups/RemoveMemberButton'
 import ActivityFeed from '@/components/activity/ActivityFeed'
 import { getGroupActivities } from '@/lib/actions/activity'
 import GroupTabs from '@/components/groups/GroupTabs'
+import NotificationBell from '@/components/notifications/NotificationBell'
+import LogoutButton from '@/components/auth/LogoutButton'
 
 // Disable caching for this page to ensure fresh data
 export const dynamic = 'force-dynamic'

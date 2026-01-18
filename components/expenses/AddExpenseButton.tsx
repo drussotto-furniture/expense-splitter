@@ -327,15 +327,18 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Amount ({currency})
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -511,19 +514,22 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
                               : (member.profile?.full_name || member.profile?.email || 'Unknown User')}
                           </span>
                           {splitType === 'custom' && selectedMembers.includes(memberId) && (
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="ml-auto w-24 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
-                              placeholder="0.00"
-                              value={customAmounts[memberId] || ''}
-                              onChange={(e) =>
-                                setCustomAmounts({
-                                  ...customAmounts,
-                                  [memberId]: e.target.value,
-                                })
-                              }
-                            />
+                            <div className="ml-auto relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                className="w-24 pl-5 pr-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+                                placeholder="0.00"
+                                value={customAmounts[memberId] || ''}
+                                onChange={(e) =>
+                                  setCustomAmounts({
+                                    ...customAmounts,
+                                    [memberId]: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
                           )}
                           {splitType === 'percentage' && selectedMembers.includes(memberId) && (
                             <div className="ml-auto flex items-center gap-1">

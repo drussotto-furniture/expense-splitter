@@ -22,7 +22,7 @@ export default async function FriendsPage() {
     .single()
 
   // Fetch pending group invitations
-  const { data: pendingGroupInvitations } = await supabase
+  const { data: pendingGroupInvitations, error: invitationsError } = await supabase
     .from('invitations')
     .select(`
       *,
@@ -92,7 +92,7 @@ export default async function FriendsPage() {
     .order('created_at', { ascending: false })
 
   // Fetch pending friend requests sent
-  const { data: sentRequests } = await supabase
+  const { data: sentRequests, error: sentRequestsError } = await supabase
     .from('friends')
     .select(`
       *,
