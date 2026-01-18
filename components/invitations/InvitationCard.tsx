@@ -27,6 +27,12 @@ export default function InvitationCard({ invitation }: InvitationCardProps) {
   const router = useRouter()
   const supabase = createClient()
 
+  // Safety check
+  if (!invitation?.group || !invitation?.inviter) {
+    console.error('Invalid invitation data:', invitation)
+    return null
+  }
+
   const handleAccept = async () => {
     setError(null)
     setLoading(true)

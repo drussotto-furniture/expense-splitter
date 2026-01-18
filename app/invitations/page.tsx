@@ -21,7 +21,7 @@ export default async function InvitationsPage() {
     .single()
 
   // Fetch pending invitations for this user's email
-  const { data: invitations } = await supabase
+  const { data: invitations, error: invitationsError } = await supabase
     .from('invitations')
     .select(`
       *,
@@ -39,12 +39,27 @@ export default async function InvitationsPage() {
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
+  if (invitationsError) {
+    console.error('Error fetching invitations:', invitationsError)
+  }
+
   // Normalize the data structure (Supabase can return arrays or objects for foreign keys)
-  const normalizedInvitations = invitations?.map((inv: any) => ({
-    ...inv,
-    group: Array.isArray(inv.group) ? inv.group[0] : inv.group,
-    inviter: Array.isArray(inv.inviter) ? inv.inviter[0] : inv.inviter,
-  }))
+  const normalizedInvitations = invitations?.map((inv: any) => {
+    const group = Array.isArray(inv.group) ? inv.group[0] : inv.group
+    const inviter = Array.isArray(inv.inviter) ? inv.inviter[0] : inv.inviter
+
+    // Ensure we have valid data
+    if (!group || !inviter) {
+      console.error('Invalid invitation data:', inv)
+      return null
+    }
+
+    return {
+      ...inv,
+      group,
+      inviter,
+    }
+  }).filter(Boolean) // Remove any null entries
 
   const invitationCount = normalizedInvitations?.length || 0
 
