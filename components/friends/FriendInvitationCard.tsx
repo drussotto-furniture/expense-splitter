@@ -17,14 +17,19 @@ export default function FriendInvitationCard({ invitation }: FriendInvitationCar
   const [isRescinded, setIsRescinded] = useState(false)
 
   const handleRescind = async () => {
+    console.log('Rescind clicked for friend invitation:', invitation.id)
+
     if (!confirm(`Are you sure you want to rescind the invitation to ${invitation.invited_email}?`)) {
+      console.log('User cancelled rescind')
       return
     }
 
+    console.log('User confirmed, starting rescind...')
     setLoading(true)
     setMessage(null)
 
     try {
+      console.log('Sending POST request to /api/rescind-friend-invitation')
       const response = await fetch('/api/rescind-friend-invitation', {
         method: 'POST',
         headers: {
@@ -35,7 +40,9 @@ export default function FriendInvitationCard({ invitation }: FriendInvitationCar
         }),
       })
 
+      console.log('Response status:', response.status)
       const data = await response.json()
+      console.log('Response data:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to rescind invitation')
@@ -45,12 +52,15 @@ export default function FriendInvitationCard({ invitation }: FriendInvitationCar
       setMessage(`Invitation rescinded (deleted: ${data.deleted})`)
       setIsRescinded(true)
 
-      console.log('Rescind response:', data)
+      console.log('Will reload in 1 second...')
       setTimeout(() => {
         // Force cache bust with timestamp
-        window.location.href = window.location.pathname + '?t=' + Date.now()
+        const newUrl = window.location.pathname + '?t=' + Date.now()
+        console.log('Reloading to:', newUrl)
+        window.location.href = newUrl
       }, 1000)
     } catch (error: any) {
+      console.error('Error rescinding friend invitation:', error)
       setMessage(error.message || 'Failed to rescind invitation')
     } finally {
       setLoading(false)

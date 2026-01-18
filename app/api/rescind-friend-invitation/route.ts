@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     // Delete the invitation
-    const { error: deleteError, count } = await supabase
+    const { error: deleteError, data: deletedRows } = await supabase
       .from('friend_invitations')
       .delete()
       .eq('id', invitationId)
@@ -43,6 +43,7 @@ export async function POST(request: Request) {
 
     if (deleteError) throw deleteError
 
+    const count = deletedRows?.length || 0
     console.log(`Deleted ${count} friend invitation(s) with ID: ${invitationId}`)
 
     // Force Next.js to revalidate the friends page

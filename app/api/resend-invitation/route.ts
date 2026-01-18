@@ -51,7 +51,8 @@ export async function POST(request: Request) {
       .single()
 
     const inviterName = profile?.full_name || profile?.email || 'Someone'
-    const groupName = invitation.groups?.name || 'Group'
+    const groupData: any = invitation.groups
+    const groupName = (Array.isArray(groupData) ? groupData[0]?.name : groupData?.name) || 'Group'
 
     // Send email
     const { data, error } = await resend.emails.send({

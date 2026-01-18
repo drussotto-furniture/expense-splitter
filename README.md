@@ -78,8 +78,8 @@ RESEND_API_KEY=your_resend_api_key
 4. Set up the database:
 
 Run the SQL migrations in your Supabase SQL Editor:
-- See `DATABASE_MIGRATION_NOTES.md` for complete schema
-- Run the storage setup from `setup-storage-fixed.sql`
+- See [documentation/002-database-setup.md](documentation/002-database-setup.md) for complete schema
+- Or use the organized migrations in `supabase/migrations/`
 
 5. Start the development server:
 ```bash
@@ -131,9 +131,19 @@ expense-splitter/
 └── public/               # Static assets
 ```
 
+## Documentation
+
+Complete documentation is available in the [documentation/](documentation/) directory:
+
+- **[Getting Started](documentation/001-getting-started.md)** - Installation and setup
+- **[Database Setup](documentation/002-database-setup.md)** - Database configuration
+- **[Quick Deploy](documentation/003-quick-deploy.md)** - Deploy in 5 minutes
+- **[Deployment Guide](documentation/005-deployment-guide.md)** - Detailed deployment instructions
+- **[All Documentation](documentation/README.md)** - Complete documentation index
+
 ## Deployment
 
-See [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
+See [documentation/003-quick-deploy.md](documentation/003-quick-deploy.md) for a 5-minute deployment guide, or [documentation/005-deployment-guide.md](documentation/005-deployment-guide.md) for detailed instructions.
 
 ### Quick Deploy to Vercel
 
