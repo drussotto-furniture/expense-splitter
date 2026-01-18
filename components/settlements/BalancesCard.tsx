@@ -60,17 +60,31 @@ export default function BalancesCard({ expenses, splits, members, groupId, curre
     const nameMap = new Map<string, string>()
 
     // Initialize with all members (both regular and pending)
+    // Also create a mapping from pending member IDs to actual user IDs
+    const pendingToUserMap = new Map<string, string>()
+
     members.forEach(member => {
       const memberId = member.user_id || member.id
       const memberName = member.profile?.full_name || member.profile?.email || member.pending_email || 'Unknown User'
 
       balanceMap.set(memberId, 0)
       nameMap.set(memberId, memberName)
+
+      // If this is an active member that was previously pending, map the pending ID to the user ID
+      if (member.id && member.user_id) {
+        pendingToUserMap.set(member.id, member.user_id)
+        // Also add the mapping with the user_id as key for the name
+        nameMap.set(member.user_id, memberName)
+      }
     })
 
     // Add amounts paid
     expenses.forEach(expense => {
-      const payerId = expense.paid_by || expense.paid_by_pending_member
+      let payerId = expense.paid_by || expense.paid_by_pending_member
+      // If it's a pending member, resolve to actual user_id
+      if (payerId && pendingToUserMap.has(payerId)) {
+        payerId = pendingToUserMap.get(payerId)!
+      }
       if (payerId) {
         const current = balanceMap.get(payerId) || 0
         balanceMap.set(payerId, current + expense.amount)
@@ -79,7 +93,11 @@ export default function BalancesCard({ expenses, splits, members, groupId, curre
 
     // Subtract amounts owed
     splits.forEach(split => {
-      const splitUserId = split.user_id || split.pending_member_id
+      let splitUserId = split.user_id || split.pending_member_id
+      // If it's a pending member, resolve to actual user_id
+      if (splitUserId && pendingToUserMap.has(splitUserId)) {
+        splitUserId = pendingToUserMap.get(splitUserId)!
+      }
       if (splitUserId) {
         const current = balanceMap.get(splitUserId) || 0
         balanceMap.set(splitUserId, current - split.amount)

@@ -47,8 +47,15 @@ interface Split {
 }
 
 interface Member {
+  id: string
   user_id: string
   is_active: boolean
+  profile?: {
+    id: string
+    full_name: string | null
+    email: string
+  } | null
+  pending_email?: string | null
 }
 
 interface ExpenseListProps {
@@ -291,7 +298,18 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
                   <div className="text-sm text-gray-600">
                     Paid by {
                       expense.pending_payer
-                        ? `${expense.pending_payer.pending_email} (Pending)`
+                        ? (() => {
+                            // Find the member record to get the resolved name
+                            const member = members.find((m: any) =>
+                              m.id === expense.paid_by_pending_member ||
+                              (m.user_id && expense.paid_by === m.user_id)
+                            )
+                            if (member && member.user_id) {
+                              // Member is now active, show their name
+                              return member.profile?.full_name || member.profile?.email || 'Unknown'
+                            }
+                            return `${expense.pending_payer.pending_email || 'Pending User'} (Pending)`
+                          })()
                         : (expense.payer?.full_name || expense.payer?.email || 'Unknown')
                     }
                   </div>
