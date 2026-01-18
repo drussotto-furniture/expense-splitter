@@ -44,8 +44,8 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
   const [category, setCategory] = useState(expense.category)
   const [notes, setNotes] = useState(expense.notes || '')
   const [expenseDate, setExpenseDate] = useState(expense.expense_date)
-  const [splitType, setSplitType] = useState<'equal' | 'personal' | 'custom'>(
-    expense.split_type === 'percentage' ? 'custom' : expense.split_type
+  const [splitType, setSplitType] = useState<'equal' | 'personal' | 'custom' | 'percentage' | 'shares'>(
+    expense.split_type as any
   )
   const [selectedMembers, setSelectedMembers] = useState<string[]>(splits.map(s => s.user_id || '').filter(Boolean))
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>(
@@ -55,6 +55,8 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
       return acc
     }, {} as Record<string, string>)
   )
+  const [percentages, setPercentages] = useState<Record<string, string>>({})
+  const [shares, setShares] = useState<Record<string, string>>({})
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -138,6 +140,46 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
           return {
             user_id: member!.user_id!,
             amount: parseFloat(customAmounts[memberId] || '0'),
+          }
+        })
+      } else if (splitType === 'percentage') {
+        // Validate that ALL selected members (including pending) add up to 100%
+        const totalPercentage = selectedMembers.reduce((sum, memberId) => {
+          return sum + parseFloat(percentages[memberId] || '0')
+        }, 0)
+
+        if (Math.abs(totalPercentage - 100) > 0.01) {
+          throw new Error(`Percentages (${totalPercentage.toFixed(1)}%) must equal 100%`)
+        }
+
+        // But only create splits for members with user_id
+        newSplits = validSelectedMembers.map(memberId => {
+          const member = activeMembers.find(m => getMemberId(m) === memberId)
+          const percentage = parseFloat(percentages[memberId] || '0')
+          const amount = (amountNum * percentage) / 100
+          return {
+            user_id: member!.user_id!,
+            amount: parseFloat(amount.toFixed(2)),
+          }
+        })
+      } else if (splitType === 'shares') {
+        // Calculate total shares (including pending members for validation)
+        const totalShares = selectedMembers.reduce((sum, memberId) => {
+          return sum + parseFloat(shares[memberId] || '0')
+        }, 0)
+
+        if (totalShares === 0) {
+          throw new Error('Total shares must be greater than 0')
+        }
+
+        // But only create splits for members with user_id
+        newSplits = validSelectedMembers.map(memberId => {
+          const member = activeMembers.find(m => getMemberId(m) === memberId)
+          const memberShares = parseFloat(shares[memberId] || '0')
+          const amount = (amountNum * memberShares) / totalShares
+          return {
+            user_id: member!.user_id!,
+            amount: parseFloat(amount.toFixed(2)),
           }
         })
       }
@@ -331,10 +373,10 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Split Type
                   </label>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-5 gap-2">
                     <button
                       type="button"
-                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium ${
+                      className={`py-2 px-3 rounded-md text-sm font-medium ${
                         splitType === 'equal'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -345,7 +387,7 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
                     </button>
                     <button
                       type="button"
-                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium ${
+                      className={`py-2 px-3 rounded-md text-sm font-medium ${
                         splitType === 'personal'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -356,7 +398,7 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
                     </button>
                     <button
                       type="button"
-                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium ${
+                      className={`py-2 px-3 rounded-md text-sm font-medium ${
                         splitType === 'custom'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -364,6 +406,28 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
                       onClick={() => setSplitType('custom')}
                     >
                       Custom
+                    </button>
+                    <button
+                      type="button"
+                      className={`py-2 px-3 rounded-md text-sm font-medium ${
+                        splitType === 'percentage'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                      onClick={() => setSplitType('percentage')}
+                    >
+                      Percent
+                    </button>
+                    <button
+                      type="button"
+                      className={`py-2 px-3 rounded-md text-sm font-medium ${
+                        splitType === 'shares'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                      onClick={() => setSplitType('shares')}
+                    >
+                      Shares
                     </button>
                   </div>
                 </div>
@@ -403,6 +467,45 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
                                 })
                               }
                             />
+                          )}
+                          {splitType === 'percentage' && selectedMembers.includes(memberId) && (
+                            <div className="ml-auto flex items-center gap-1">
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="0"
+                                value={percentages[memberId] || ''}
+                                onChange={(e) =>
+                                  setPercentages({
+                                    ...percentages,
+                                    [memberId]: e.target.value,
+                                  })
+                                }
+                              />
+                              <span className="text-sm text-gray-600">%</span>
+                            </div>
+                          )}
+                          {splitType === 'shares' && selectedMembers.includes(memberId) && (
+                            <div className="ml-auto flex items-center gap-1">
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="1"
+                                value={shares[memberId] || ''}
+                                onChange={(e) =>
+                                  setShares({
+                                    ...shares,
+                                    [memberId]: e.target.value,
+                                  })
+                                }
+                              />
+                              <span className="text-sm text-gray-600">shares</span>
+                            </div>
                           )}
                         </div>
                       )})}
