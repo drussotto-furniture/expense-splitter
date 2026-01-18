@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,6 +44,10 @@ export async function POST(request: Request) {
     if (deleteError) throw deleteError
 
     console.log(`Deleted ${count} friend invitation(s) with ID: ${invitationId}`)
+
+    // Force Next.js to revalidate the friends page
+    revalidatePath('/friends')
+    revalidatePath('/friends', 'page')
 
     const response = NextResponse.json({ success: true, deleted: count })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
