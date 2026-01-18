@@ -25,8 +25,8 @@ interface AddExpenseButtonProps {
 }
 
 export default function AddExpenseButton({ groupId, members, currency }: AddExpenseButtonProps) {
-  // Include active and pending members (exclude only inactive)
-  const activeMembers = members.filter(m => m.status !== 'inactive' && m.is_active !== false)
+  // Only include active members with user_id (exclude pending and inactive)
+  const activeMembers = members.filter(m => m.status !== 'inactive' && m.status !== 'pending' && m.is_active !== false && m.user_id)
 
   const [isOpen, setIsOpen] = useState(false)
   const [description, setDescription] = useState('')

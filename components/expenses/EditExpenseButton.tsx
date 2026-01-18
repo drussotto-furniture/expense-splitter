@@ -30,7 +30,8 @@ interface EditExpenseButtonProps {
 }
 
 export default function EditExpenseButton({ expense, splits, members, groupId }: EditExpenseButtonProps) {
-  const activeMembers = members.filter(m => m.is_active !== false)
+  // Only include active members with user_id (exclude pending and inactive)
+  const activeMembers = members.filter(m => m.is_active !== false && m.user_id)
 
   const [isOpen, setIsOpen] = useState(false)
   const [description, setDescription] = useState(expense.description)
