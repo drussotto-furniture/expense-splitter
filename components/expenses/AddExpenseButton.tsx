@@ -269,10 +269,19 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
     }
   }
 
+  const handleOpenModal = async () => {
+    // Set default paidBy to current user when opening modal
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      setPaidBy(user.id)
+    }
+    setIsOpen(true)
+  }
+
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpenModal}
         className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-900 transition-colors"
       >
         <Plus className="h-4 w-4" />
