@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { UserPlus, Mail } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import AppHeader from '@/components/navigation/AppHeader'
 import AddFriendButton from '@/components/friends/AddFriendButton'
 import FriendCard from '@/components/friends/FriendCard'
+import FriendInvitationCard from '@/components/friends/FriendInvitationCard'
 import GroupInvitationCard from '@/components/friends/GroupInvitationCard'
 import Link from 'next/link'
 
@@ -237,25 +238,10 @@ export default async function FriendsPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sentInvitations.map((invitation) => (
-                <div key={invitation.id} className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {invitation.invited_email}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Invitation sent
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(invitation.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Mail className="h-4 w-4" />
-                    <span>Waiting for them to sign up</span>
-                  </div>
-                </div>
+                <FriendInvitationCard
+                  key={invitation.id}
+                  invitation={invitation}
+                />
               ))}
             </div>
           </div>

@@ -218,50 +218,115 @@ export default function InviteMemberButton({ groupId, groupName }: InviteMemberB
         throw new Error('This user is already a member of the group')
       }
 
-      // Add existing user directly to the group
-      const { error: addMemberError } = await supabase
-        .from('group_members')
-        .insert({
-          group_id: groupId,
-          user_id: profile.id,
-          role: 'member',
-          status: 'active',
-          is_active: true,
-        })
+      // Check if this user is already a friend (accepted friendship)
+      const { data: friendship } = await supabase
+        .from('friends')
+        .select('id, status')
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${profile.id}),and(user_id.eq.${profile.id},friend_id.eq.${user.id})`)
+        .eq('status', 'accepted')
+        .maybeSingle()
 
-      if (addMemberError) throw addMemberError
+      if (friendship) {
+        // Already friends - add directly to group without invitation
+        const { error: addMemberError } = await supabase
+          .from('group_members')
+          .insert({
+            group_id: groupId,
+            user_id: profile.id,
+            role: 'member',
+            status: 'active',
+            is_active: true,
+          })
 
-      // Log activity
-      await logActivity({
-        groupId,
-        activityType: 'member_invited',
-        details: {
-          member_email: emailToAdd.toLowerCase(),
-          member_name: profile.full_name || emailToAdd,
-          added_directly: true,
-        },
-      })
+        if (addMemberError) throw addMemberError
 
-      // Send email notification to the added user
-      try {
-        await fetch('/api/notify-member-added', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        // Log activity
+        await logActivity({
+          groupId,
+          activityType: 'member_invited',
+          details: {
+            member_email: emailToAdd.toLowerCase(),
+            member_name: profile.full_name || emailToAdd,
+            added_directly: true,
+            is_friend: true,
           },
-          body: JSON.stringify({
-            addedUserEmail: emailToAdd.toLowerCase(),
-            addedUserName: profile.full_name || emailToAdd,
-            groupName,
-            groupId,
-          }),
         })
-      } catch (emailError) {
-        console.error('Error sending notification email:', emailError)
-        // Don't fail the operation if email fails
-      }
 
-      setSuccessMessage(`${profile.full_name || emailToAdd} has been added to the group and notified!`)
+        // Send email notification
+        try {
+          await fetch('/api/notify-member-added', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              addedUserEmail: emailToAdd.toLowerCase(),
+              addedUserName: profile.full_name || emailToAdd,
+              groupName,
+              groupId,
+            }),
+          })
+        } catch (emailError) {
+          console.error('Error sending notification email:', emailError)
+        }
+
+        setSuccessMessage(`${profile.full_name || emailToAdd} (your friend) has been added to the group!`)
+      } else {
+        // Not friends yet - create invitation (will auto-create friendship when accepted)
+        const { error: inviteError } = await supabase
+          .from('invitations')
+          .insert({
+            group_id: groupId,
+            invited_by: user.id,
+            invited_email: emailToAdd.toLowerCase(),
+            status: 'pending',
+          })
+
+        if (inviteError) throw inviteError
+
+        // Log activity
+        await logActivity({
+          groupId,
+          activityType: 'member_invited',
+          details: {
+            member_email: emailToAdd.toLowerCase(),
+            member_name: profile.full_name || emailToAdd,
+            invited_to_join: true,
+            will_create_friendship: true,
+          },
+        })
+
+        // Send invitation email
+        let emailSent = false
+        try {
+          const response = await fetch('/api/send-invitation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              invitedEmail: emailToAdd.toLowerCase(),
+              groupName,
+              groupId,
+            }),
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            console.error('Failed to send invitation email:', errorData)
+          } else {
+            emailSent = true
+          }
+        } catch (emailError) {
+          console.error('Error sending invitation email:', emailError)
+        }
+
+        if (emailSent) {
+          setSuccessMessage(`Invitation sent to ${profile.full_name || emailToAdd}! You'll become friends when they accept.`)
+        } else {
+          setSuccessMessage(`Invitation created for ${profile.full_name || emailToAdd}. You'll become friends when they accept.`)
+        }
+      }
     } else {
       // User doesn't exist - create invitation
       const { error: inviteError } = await supabase
@@ -282,6 +347,7 @@ export default function InviteMemberButton({ groupId, groupName }: InviteMemberB
         details: {
           member_email: emailToAdd.toLowerCase(),
           invited_to_join: true,
+          will_create_friendship: true,
         },
       })
 
@@ -311,9 +377,9 @@ export default function InviteMemberButton({ groupId, groupName }: InviteMemberB
       }
 
       if (emailSent) {
-        setSuccessMessage('Invitation sent! They will receive an email notification.')
+        setSuccessMessage(`Invitation sent to ${emailToAdd}! You'll become friends when they sign up and accept.`)
       } else {
-        setSuccessMessage('Invitation created! They can accept it by logging in.')
+        setSuccessMessage(`Invitation created for ${emailToAdd}. You'll become friends when they sign up and accept.`)
       }
     }
 
