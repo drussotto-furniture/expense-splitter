@@ -115,6 +115,21 @@ export default async function FriendsPage() {
     .eq('status', 'pending')
     .order('created_at', { ascending: false})
 
+  // Fetch group invitations sent by this user
+  const { data: sentGroupInvitations } = await supabase
+    .from('invitations')
+    .select(`
+      *,
+      group:groups (
+        id,
+        name,
+        base_currency
+      )
+    `)
+    .eq('invited_by', user.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+
   // Combine all accepted friends (remove duplicates)
   const allFriends = [
     ...(sentFriends || []),
@@ -235,6 +250,38 @@ export default async function FriendsPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Mail className="h-4 w-4" />
                     <span>Waiting for them to sign up</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Group Invitations Sent */}
+        {sentGroupInvitations && sentGroupInvitations.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Group Invitations Sent ({sentGroupInvitations.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sentGroupInvitations.map((invitation) => (
+                <div key={invitation.id} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        {invitation.invited_email}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Invited to join "{invitation.group?.name || 'Group'}"
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Sent {new Date(invitation.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Mail className="h-4 w-4" />
+                    <span>Pending acceptance</span>
                   </div>
                 </div>
               ))}

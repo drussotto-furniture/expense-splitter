@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo } from 'react'
-import { DollarSign, ArrowRight } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { DollarSign, ArrowRight, Check } from 'lucide-react'
+import { markSettlementPaid } from '@/lib/actions/settlements'
 
 interface Expense {
   id: string
@@ -51,6 +52,8 @@ interface Settlement {
 }
 
 export default function BalancesCard({ expenses, splits, members, groupId, currency }: BalancesCardProps) {
+  const [loadingSettlements, setLoadingSettlements] = useState<Set<number>>(new Set())
+
   const { balances, settlements } = useMemo(() => {
     // Calculate balances
     const balanceMap = new Map<string, number>()
@@ -139,6 +142,33 @@ export default function BalancesCard({ expenses, splits, members, groupId, curre
     return `${symbols[currency] || currency} ${Math.abs(amount).toFixed(2)}`
   }
 
+  const handleMarkAsPaid = async (settlement: Settlement, index: number) => {
+    setLoadingSettlements(prev => new Set(prev).add(index))
+
+    try {
+      const result = await markSettlementPaid({
+        groupId,
+        fromUserId: settlement.from,
+        toUserId: settlement.to,
+        amount: settlement.amount,
+        currency,
+      })
+
+      if (!result.success) {
+        alert(result.error || 'Failed to mark settlement as paid')
+      }
+    } catch (error) {
+      console.error('Error marking settlement as paid:', error)
+      alert('An error occurred while marking the settlement as paid')
+    } finally {
+      setLoadingSettlements(prev => {
+        const next = new Set(prev)
+        next.delete(index)
+        return next
+      })
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center gap-2 mb-4">
@@ -182,10 +212,27 @@ export default function BalancesCard({ expenses, splits, members, groupId, curre
                   <ArrowRight className="h-4 w-4 text-gray-400 mx-2" />
                   <span className="font-medium text-gray-900">{settlement.toName}</span>
                 </div>
-                <div className="text-center mt-1">
+                <div className="flex items-center justify-between mt-2">
                   <span className="text-lg font-bold text-blue-600">
                     {formatCurrency(settlement.amount)}
                   </span>
+                  <button
+                    onClick={() => handleMarkAsPaid(settlement, index)}
+                    disabled={loadingSettlements.has(index)}
+                    className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md transition-colors"
+                  >
+                    {loadingSettlements.has(index) ? (
+                      <>
+                        <span className="animate-spin">⏳</span>
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        <span>Mark as Paid</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             ))}
