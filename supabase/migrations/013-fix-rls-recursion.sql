@@ -1,5 +1,5 @@
--- FINAL SOLUTION: Proper RLS policies without recursion
--- This uses a helper table to break the recursion chain
+-- Fix RLS recursion issues with group_members policies
+-- This uses a helper view to break the recursion chain
 
 -- Step 1: Create a helper view that tracks user's group memberships
 -- Views are evaluated separately and don't trigger RLS recursion
@@ -9,9 +9,12 @@ FROM group_members
 WHERE user_id IS NOT NULL;
 
 -- Step 2: Drop existing policies
+DROP POLICY IF EXISTS "Users can view members of their groups" ON group_members;
 DROP POLICY IF EXISTS "Users can view group members" ON group_members;
+DROP POLICY IF EXISTS "Group admins can add members" ON group_members;
 DROP POLICY IF EXISTS "Users can insert group members" ON group_members;
 DROP POLICY IF EXISTS "Users can update group members" ON group_members;
+DROP POLICY IF EXISTS "Group admins can remove members" ON group_members;
 DROP POLICY IF EXISTS "Users can delete group members" ON group_members;
 
 -- Step 3: Create new SELECT policy using the view (breaks recursion)

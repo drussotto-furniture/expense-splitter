@@ -16,6 +16,8 @@ This directory contains all database migrations for the Expense Splitter applica
 10. **010-unify-invitation-system.sql** - Unifies friend and group invitations with auto-friendship creation
 11. **011-fix-pending-members-complete.sql** - Completes pending member support with proper foreign keys
 12. **012-fix-foreign-keys.sql** - Fixes foreign key constraints in group_activities table
+13. **013-fix-rls-recursion.sql** - Fixes RLS recursion issues with user_groups view
+14. **014-fix-storage-bucket-public.sql** - Makes receipts bucket public for easier image viewing
 
 ## Applying Migrations
 
