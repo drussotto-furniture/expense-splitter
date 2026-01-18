@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { UserPlus, X } from 'lucide-react'
+import { logActivity } from '@/lib/actions/activity'
 
 interface InviteMemberButtonProps {
   groupId: string
@@ -230,6 +231,17 @@ export default function InviteMemberButton({ groupId, groupName }: InviteMemberB
 
       if (addMemberError) throw addMemberError
 
+      // Log activity
+      await logActivity({
+        groupId,
+        activityType: 'member_invited',
+        details: {
+          member_email: emailToAdd.toLowerCase(),
+          member_name: profile.full_name || emailToAdd,
+          added_directly: true,
+        },
+      })
+
       // Send email notification to the added user
       try {
         await fetch('/api/notify-member-added', {
@@ -262,6 +274,16 @@ export default function InviteMemberButton({ groupId, groupName }: InviteMemberB
         })
 
       if (inviteError) throw inviteError
+
+      // Log activity
+      await logActivity({
+        groupId,
+        activityType: 'member_invited',
+        details: {
+          member_email: emailToAdd.toLowerCase(),
+          invited_to_join: true,
+        },
+      })
 
       // Send email notification
       let emailSent = false

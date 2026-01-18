@@ -44,7 +44,8 @@ export interface Expense {
   description: string
   amount: number
   currency: string
-  paid_by: string
+  paid_by: string | null
+  paid_by_pending_member: string | null
   category: string
   notes: string | null
   receipt_url: string | null
@@ -52,16 +53,26 @@ export interface Expense {
   split_type: 'equal' | 'personal' | 'custom' | 'percentage' | 'shares'
   created_at: string
   updated_at: string
+  created_by: string
   payer?: Profile
+  pending_payer?: {
+    id: string
+    pending_email: string | null
+  }
 }
 
 export interface ExpenseSplit {
   id: string
   expense_id: string
-  user_id: string
+  user_id: string | null
+  pending_member_id: string | null
   amount: number
   percentage: number | null
   profile?: Profile
+  pending_member?: {
+    id: string
+    pending_email: string | null
+  }
 }
 
 export interface Settlement {

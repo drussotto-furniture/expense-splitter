@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Receipt, Image as ImageIcon, X } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Receipt, Image as ImageIcon, X, ArrowUpDown } from 'lucide-react'
 import DeleteExpenseButton from './DeleteExpenseButton'
 import EditExpenseButton from './EditExpenseButton'
 
@@ -10,7 +10,9 @@ interface Expense {
   description: string
   amount: number
   currency: string
-  paid_by: string
+  paid_by: string | null
+  paid_by_pending_member: string | null
+  created_by: string
   category: string
   notes: string | null
   receipt_url: string | null
@@ -20,7 +22,11 @@ interface Expense {
     id: string
     full_name: string | null
     email: string
-  }
+  } | null
+  pending_payer: {
+    id: string
+    pending_email: string | null
+  } | null
 }
 
 interface Split {
@@ -52,10 +58,15 @@ interface ExpenseListProps {
   currentUserId: string
   members: Member[]
   currency: string
+  isGroupAdmin: boolean
 }
 
-export default function ExpenseList({ expenses, splits, groupId, currentUserId, members, currency }: ExpenseListProps) {
+export default function ExpenseList({ expenses, splits, groupId, currentUserId, members, currency, isGroupAdmin }: ExpenseListProps) {
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'description'>('date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [filterPayer, setFilterPayer] = useState<string>('all')
 
   const getExpenseSplits = (expenseId: string) => {
     return splits.filter(split => split.expense_id === expenseId)
@@ -79,6 +90,88 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
     return `${symbols[currency] || currency} ${amount.toFixed(2)}`
   }
 
+  // Get unique categories and payers for filters
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set(expenses.map(e => e.category))
+    return ['all', ...Array.from(uniqueCategories).sort()]
+  }, [expenses])
+
+  const payers = useMemo(() => {
+    const uniquePayers = new Map<string, string>()
+    expenses.forEach(e => {
+      if (e.pending_payer) {
+        uniquePayers.set(e.paid_by_pending_member || '', e.pending_payer.pending_email || 'Pending User')
+      } else if (e.payer) {
+        uniquePayers.set(e.paid_by || '', e.payer.full_name || e.payer.email)
+      }
+    })
+    return [
+      { id: 'all', name: 'All Payers' },
+      ...Array.from(uniquePayers.entries()).map(([id, name]) => ({ id, name }))
+    ]
+  }, [expenses])
+
+  // Filter and sort expenses
+  const filteredAndSortedExpenses = useMemo(() => {
+    let filtered = [...expenses]
+
+    // Apply category filter
+    if (filterCategory !== 'all') {
+      filtered = filtered.filter(e => e.category === filterCategory)
+    }
+
+    // Apply payer filter
+    if (filterPayer !== 'all') {
+      filtered = filtered.filter(e =>
+        (e.paid_by && e.paid_by === filterPayer) ||
+        (e.paid_by_pending_member && e.paid_by_pending_member === filterPayer)
+      )
+    }
+
+    // Sort expenses
+    filtered.sort((a, b) => {
+      let comparison = 0
+
+      switch (sortBy) {
+        case 'date':
+          // Parse dates properly (expense_date is in YYYY-MM-DD format)
+          const dateA = new Date(a.expense_date + 'T00:00:00').getTime()
+          const dateB = new Date(b.expense_date + 'T00:00:00').getTime()
+          comparison = dateA - dateB
+          break
+        case 'amount':
+          comparison = a.amount - b.amount
+          break
+        case 'description':
+          comparison = a.description.localeCompare(b.description)
+          break
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    console.log('Sorted expenses:', {
+      sortBy,
+      sortOrder,
+      expenses: filtered.slice(0, 5).map(e => ({
+        description: e.description,
+        date: e.expense_date,
+        timestamp: new Date(e.expense_date + 'T00:00:00').getTime()
+      }))
+    })
+
+    return filtered
+  }, [expenses, filterCategory, filterPayer, sortBy, sortOrder])
+
+  const toggleSort = (field: 'date' | 'amount' | 'description') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      setSortOrder('desc')
+    }
+  }
+
   if (expenses.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-12 text-center">
@@ -91,7 +184,93 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
 
   return (
     <div className="space-y-4">
-      {expenses.map((expense) => {
+      {/* Filters and Sort Controls */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Category Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat === 'all' ? 'All Categories' : cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Payer Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Paid By
+            </label>
+            <select
+              value={filterPayer}
+              onChange={(e) => setFilterPayer(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+            >
+              {payers.map(payer => (
+                <option key={payer.id} value={payer.id}>
+                  {payer.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort Controls */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Sort By
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => toggleSort('date')}
+                className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  sortBy === 'date'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Date {sortBy === 'date' && (sortOrder === 'desc' ? '↓' : '↑')}
+              </button>
+              <button
+                onClick={() => toggleSort('amount')}
+                className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  sortBy === 'amount'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Amount {sortBy === 'amount' && (sortOrder === 'desc' ? '↓' : '↑')}
+              </button>
+              <button
+                onClick={() => toggleSort('description')}
+                className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  sortBy === 'description'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Name {sortBy === 'description' && (sortOrder === 'desc' ? '↓' : '↑')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Results count */}
+        <div className="mt-3 text-sm text-gray-600">
+          Showing {filteredAndSortedExpenses.length} of {expenses.length} expenses
+        </div>
+      </div>
+
+      {/* Expense List */}
+      {filteredAndSortedExpenses.map((expense) => {
         const expenseSplits = getExpenseSplits(expense.id)
 
         return (
@@ -110,17 +289,32 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
                     {formatCurrency(expense.amount, expense.currency)}
                   </div>
                   <div className="text-sm text-gray-600">
-                    Paid by {expense.payer.full_name || expense.payer.email}
+                    Paid by {
+                      expense.pending_payer
+                        ? `${expense.pending_payer.pending_email} (Pending)`
+                        : (expense.payer?.full_name || expense.payer?.email || 'Unknown')
+                    }
                   </div>
                 </div>
-                {expense.paid_by === currentUserId && (
+                {(expense.created_by === currentUserId || isGroupAdmin) && (
                   <div className="flex items-center gap-2">
                     <EditExpenseButton
                       expense={expense as any}
-                      splits={expenseSplits.map(s => ({
-                        user_id: s.user_id,
-                        amount: s.amount
-                      }))}
+                      splits={(() => {
+                        const mapped = expenseSplits.map(s => ({
+                          user_id: s.user_id,
+                          pending_member_id: s.pending_member_id,
+                          amount: s.amount
+                        }))
+                        console.log('Passing splits to EditExpenseButton:', {
+                          expenseId: expense.id,
+                          expenseDescription: expense.description,
+                          expenseSplitsLength: expenseSplits.length,
+                          mappedLength: mapped.length,
+                          mapped: JSON.stringify(mapped)
+                        })
+                        return mapped
+                      })()}
                       members={members as any}
                       groupId={groupId}
                     />

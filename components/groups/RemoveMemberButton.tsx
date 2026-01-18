@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { UserMinus, X, AlertCircle } from 'lucide-react'
+import { logActivity } from '@/lib/actions/activity'
 
 interface RemoveMemberButtonProps {
   memberId: string
@@ -80,6 +81,16 @@ export default function RemoveMemberButton({
 
         if (updateError) throw updateError
       }
+
+      // Log activity
+      await logActivity({
+        groupId,
+        activityType: 'member_removed',
+        details: {
+          member_name: memberName,
+          was_pending: isPending || false,
+        },
+      })
 
       setIsOpen(false)
       router.refresh()

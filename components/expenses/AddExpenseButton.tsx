@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Plus, X } from 'lucide-react'
+import { logActivity } from '@/lib/actions/activity'
 
 interface Member {
   id: string
@@ -172,13 +173,38 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
         .insert(
           splits.map(split => ({
             expense_id: expense.id,
-            user_id: split.user_id,
+            ...(split.user_id ? { user_id: split.user_id } : { pending_member_id: split.pending_member_id }),
             amount: split.amount,
-            percentage: null,
           }))
         )
 
       if (splitsError) throw splitsError
+
+      // Get payer name for activity log
+      const payerName = payerMember?.profile?.full_name || payerMember?.profile?.email || payerMember?.pending_email || 'Unknown'
+
+      // Get split member names
+      const splitMemberNames = selectedMembers.map(memberId => {
+        const member = activeMembers.find(m => getMemberId(m) === memberId)
+        return member?.profile?.full_name || member?.profile?.email || member?.pending_email || 'Unknown'
+      })
+
+      // Log activity
+      await logActivity({
+        groupId,
+        activityType: 'expense_created',
+        details: {
+          expense_id: expense.id,
+          description,
+          amount: amountNum,
+          currency,
+          category,
+          split_type: splitType,
+          paid_by_name: payerName,
+          split_members: splitMemberNames,
+          split_count: selectedMembers.length,
+        },
+      })
 
       // Upload receipt if provided
       if (receiptFile) {

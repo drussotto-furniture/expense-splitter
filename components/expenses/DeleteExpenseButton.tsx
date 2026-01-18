@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Trash2, X } from 'lucide-react'
+import { logActivity } from '@/lib/actions/activity'
 
 interface DeleteExpenseButtonProps {
   expenseId: string
@@ -22,6 +23,13 @@ export default function DeleteExpenseButton({ expenseId, expenseDescription }: D
     setLoading(true)
 
     try {
+      // Get expense details before deleting for activity log
+      const { data: expense } = await supabase
+        .from('expenses')
+        .select('group_id, amount, currency, category')
+        .eq('id', expenseId)
+        .single()
+
       // Delete expense splits first (foreign key constraint)
       const { error: splitsError } = await supabase
         .from('expense_splits')
@@ -37,6 +45,21 @@ export default function DeleteExpenseButton({ expenseId, expenseDescription }: D
         .eq('id', expenseId)
 
       if (expenseError) throw expenseError
+
+      // Log activity
+      if (expense) {
+        await logActivity({
+          groupId: expense.group_id,
+          activityType: 'expense_deleted',
+          details: {
+            expense_id: expenseId,
+            description: expenseDescription,
+            amount: expense.amount,
+            currency: expense.currency,
+            category: expense.category,
+          },
+        })
+      }
 
       setIsOpen(false)
       router.refresh()

@@ -10,6 +10,9 @@ import InviteMemberButton from '@/components/groups/InviteMemberButton'
 import DeleteGroupButton from '@/components/groups/DeleteGroupButton'
 import RemoveMemberButton from '@/components/groups/RemoveMemberButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import ActivityFeed from '@/components/activity/ActivityFeed'
+import { getGroupActivities } from '@/lib/actions/activity'
+import GroupTabs from '@/components/groups/GroupTabs'
 
 // Disable caching for this page to ensure fresh data
 export const dynamic = 'force-dynamic'
@@ -60,7 +63,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     `)
     .eq('group_id', id)
 
-  // Fetch expenses with payer info
+  // Fetch expenses with payer info (both regular and pending members)
   const { data: expenses } = await supabase
     .from('expenses')
     .select(`
@@ -69,13 +72,17 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         id,
         full_name,
         email
+      ),
+      pending_payer:group_members!expenses_paid_by_pending_member_fkey (
+        id,
+        pending_email
       )
     `)
     .eq('group_id', id)
     .order('expense_date', { ascending: false })
 
   // Fetch expense splits
-  const { data: allSplits } = await supabase
+  const { data: allSplits, error: splitsError } = await supabase
     .from('expense_splits')
     .select(`
       *,
@@ -90,6 +97,17 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
       )
     `)
     .in('expense_id', expenses?.map(e => e.id) || [])
+
+  console.log('Fetched splits from database:', {
+    expensesCount: expenses?.length,
+    expenseIds: expenses?.map(e => e.id),
+    splitsCount: allSplits?.length,
+    splitsError: splitsError,
+    splits: allSplits?.map(s => ({ expense_id: s.expense_id, user_id: s.user_id, pending_member_id: s.pending_member_id, amount: s.amount }))
+  })
+
+  // Fetch group activities
+  const activities = await getGroupActivities(id)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -128,24 +146,32 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Expenses */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">Expenses</h2>
-              <AddExpenseButton
-                groupId={id}
-                members={members || []}
-                currency={group.base_currency}
-              />
-            </div>
-
-            <ExpenseList
-              expenses={expenses || []}
-              splits={allSplits || []}
-              groupId={id}
-              currentUserId={user.id}
-              members={members || []}
-              currency={group.base_currency}
+          {/* Left column - Expenses & Activity */}
+          <div className="lg:col-span-2">
+            <GroupTabs
+              expensesContent={
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <AddExpenseButton
+                      groupId={id}
+                      members={members || []}
+                      currency={group.base_currency}
+                    />
+                  </div>
+                  <ExpenseList
+                    expenses={expenses || []}
+                    splits={allSplits || []}
+                    groupId={id}
+                    currentUserId={user.id}
+                    members={members || []}
+                    currency={group.base_currency}
+                    isGroupAdmin={group.created_by === user.id}
+                  />
+                </div>
+              }
+              activityContent={
+                <ActivityFeed activities={activities} />
+              }
             />
           </div>
 

@@ -6,22 +6,26 @@ import { DollarSign, ArrowRight } from 'lucide-react'
 interface Expense {
   id: string
   amount: number
-  paid_by: string
+  paid_by: string | null
+  paid_by_pending_member: string | null
 }
 
 interface Split {
   expense_id: string
-  user_id: string
+  user_id: string | null
+  pending_member_id: string | null
   amount: number
 }
 
 interface Member {
-  user_id: string
+  id: string
+  user_id: string | null
+  pending_email: string | null
   profile: {
     id: string
     full_name: string | null
     email: string
-  }
+  } | null
 }
 
 interface BalancesCardProps {
@@ -52,24 +56,31 @@ export default function BalancesCard({ expenses, splits, members, groupId, curre
     const balanceMap = new Map<string, number>()
     const nameMap = new Map<string, string>()
 
-    // Initialize with all active members (filter out pending members without profiles)
+    // Initialize with all members (both regular and pending)
     members.forEach(member => {
-      if (member.profile && member.user_id) {
-        balanceMap.set(member.user_id, 0)
-        nameMap.set(member.user_id, member.profile?.full_name || member.profile?.email || 'Unknown User')
-      }
+      const memberId = member.user_id || member.id
+      const memberName = member.profile?.full_name || member.profile?.email || member.pending_email || 'Unknown User'
+
+      balanceMap.set(memberId, 0)
+      nameMap.set(memberId, memberName)
     })
 
     // Add amounts paid
     expenses.forEach(expense => {
-      const current = balanceMap.get(expense.paid_by) || 0
-      balanceMap.set(expense.paid_by, current + expense.amount)
+      const payerId = expense.paid_by || expense.paid_by_pending_member
+      if (payerId) {
+        const current = balanceMap.get(payerId) || 0
+        balanceMap.set(payerId, current + expense.amount)
+      }
     })
 
     // Subtract amounts owed
     splits.forEach(split => {
-      const current = balanceMap.get(split.user_id) || 0
-      balanceMap.set(split.user_id, current - split.amount)
+      const splitUserId = split.user_id || split.pending_member_id
+      if (splitUserId) {
+        const current = balanceMap.get(splitUserId) || 0
+        balanceMap.set(splitUserId, current - split.amount)
+      }
     })
 
     // Convert to array
