@@ -121,6 +121,26 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     splits: allSplits?.map(s => ({ expense_id: s.expense_id, user_id: s.user_id, pending_member_id: s.pending_member_id, amount: s.amount }))
   })
 
+  // Normalize expenses data (Supabase can return foreign keys as arrays)
+  const normalizedExpenses = expenses?.map((exp: any) => ({
+    ...exp,
+    payer: Array.isArray(exp.payer) ? exp.payer[0] : exp.payer,
+    pending_payer: Array.isArray(exp.pending_payer) ? exp.pending_payer[0] : exp.pending_payer,
+  }))
+
+  // Normalize splits data
+  const normalizedSplits = allSplits?.map((split: any) => ({
+    ...split,
+    profile: Array.isArray(split.profile) ? split.profile[0] : split.profile,
+    pending_member: Array.isArray(split.pending_member) ? split.pending_member[0] : split.pending_member,
+  }))
+
+  // Normalize members data
+  const normalizedMembers = members?.map((member: any) => ({
+    ...member,
+    profile: Array.isArray(member.profile) ? member.profile[0] : member.profile,
+  }))
+
   // Fetch group activities
   const activities = await getGroupActivities(id)
 
@@ -171,16 +191,16 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
                   <div className="flex justify-between items-center">
                     <AddExpenseButton
                       groupId={id}
-                      members={members || []}
+                      members={normalizedMembers || []}
                       currency={group.base_currency}
                     />
                   </div>
                   <ExpenseList
-                    expenses={expenses || []}
-                    splits={allSplits || []}
+                    expenses={normalizedExpenses || []}
+                    splits={normalizedSplits || []}
                     groupId={id}
                     currentUserId={user.id}
-                    members={members || []}
+                    members={normalizedMembers || []}
                     currency={group.base_currency}
                     isGroupAdmin={group.created_by === user.id}
                   />
@@ -195,9 +215,9 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
           {/* Right column - Balances and Members */}
           <div className="space-y-6">
             <BalancesCard
-              expenses={expenses || []}
-              splits={allSplits || []}
-              members={members || []}
+              expenses={normalizedExpenses || []}
+              splits={normalizedSplits || []}
+              members={normalizedMembers || []}
               groupId={id}
               currency={group.base_currency}
             />
@@ -214,7 +234,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
                 )}
               </div>
               <div className="space-y-3">
-                {members?.map((member: any) => (
+                {normalizedMembers?.map((member: any) => (
                   <div key={member.id} className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
