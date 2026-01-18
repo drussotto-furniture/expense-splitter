@@ -188,7 +188,7 @@ export default function InviteMemberButton({ groupId, groupName }: InviteMemberB
       .eq('group_id', groupId)
       .eq('invited_email', emailToAdd.toLowerCase())
       .eq('status', 'pending')
-      .single()
+      .maybeSingle()
 
     if (existingInvite) {
       throw new Error('An invitation has already been sent to this email')
@@ -199,7 +199,7 @@ export default function InviteMemberButton({ groupId, groupName }: InviteMemberB
       .from('profiles')
       .select('id, full_name')
       .eq('email', emailToAdd.toLowerCase())
-      .single()
+      .maybeSingle()
 
     if (profile) {
       // User exists in the system - check if already a member
@@ -208,7 +208,7 @@ export default function InviteMemberButton({ groupId, groupName }: InviteMemberB
         .select('id, is_active, status')
         .eq('group_id', groupId)
         .eq('user_id', profile.id)
-        .single()
+        .maybeSingle()
 
       if (existingMember) {
         if (existingMember.is_active === false || existingMember.status === 'inactive') {
