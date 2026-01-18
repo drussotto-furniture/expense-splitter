@@ -11,6 +11,10 @@ import DeleteGroupButton from '@/components/groups/DeleteGroupButton'
 import RemoveMemberButton from '@/components/groups/RemoveMemberButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
 
+// Disable caching for this page to ensure fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
