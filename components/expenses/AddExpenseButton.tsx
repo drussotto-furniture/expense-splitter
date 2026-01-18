@@ -80,24 +80,36 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
       if (expenseError) throw expenseError
 
       // Calculate splits
+      // Filter out pending members (who don't have user_id) since they can't have expense splits
+      const validSelectedMembers = selectedMembers.filter(memberId => {
+        const member = activeMembers.find(m => getMemberId(m) === memberId)
+        return member?.user_id // Only include if they have a user_id
+      })
+
       let splits: { user_id: string; amount: number }[] = []
 
       if (splitType === 'equal') {
-        const splitAmount = amountNum / selectedMembers.length
-        splits = selectedMembers.map(userId => ({
-          user_id: userId,
-          amount: parseFloat(splitAmount.toFixed(2)),
-        }))
+        const splitAmount = amountNum / validSelectedMembers.length
+        splits = validSelectedMembers.map(memberId => {
+          const member = activeMembers.find(m => getMemberId(m) === memberId)
+          return {
+            user_id: member!.user_id!,
+            amount: parseFloat(splitAmount.toFixed(2)),
+          }
+        })
       } else if (splitType === 'personal') {
         splits = [{
           user_id: user.id,
           amount: amountNum,
         }]
       } else if (splitType === 'custom') {
-        splits = selectedMembers.map(userId => ({
-          user_id: userId,
-          amount: parseFloat(customAmounts[userId] || '0'),
-        }))
+        splits = validSelectedMembers.map(memberId => {
+          const member = activeMembers.find(m => getMemberId(m) === memberId)
+          return {
+            user_id: member!.user_id!,
+            amount: parseFloat(customAmounts[memberId] || '0'),
+          }
+        })
 
         const totalCustom = splits.reduce((sum, s) => sum + s.amount, 0)
         if (Math.abs(totalCustom - amountNum) > 0.01) {
