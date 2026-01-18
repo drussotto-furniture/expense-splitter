@@ -21,6 +21,7 @@ export default function GroupInvitationCard({ invitation }: GroupInvitationCardP
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [isRescinded, setIsRescinded] = useState(false)
   const router = useRouter()
 
   const handleRescind = async () => {
@@ -48,8 +49,9 @@ export default function GroupInvitationCard({ invitation }: GroupInvitationCardP
       }
 
       setMessage('Invitation rescinded')
+      setIsRescinded(true)
       setTimeout(() => {
-        router.refresh()
+        window.location.reload()
       }, 1000)
     } catch (error: any) {
       setMessage(error.message || 'Failed to rescind invitation')
@@ -87,6 +89,10 @@ export default function GroupInvitationCard({ invitation }: GroupInvitationCardP
     } finally {
       setResending(false)
     }
+  }
+
+  if (isRescinded) {
+    return null
   }
 
   return (
