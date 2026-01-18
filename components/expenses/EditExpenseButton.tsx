@@ -355,7 +355,7 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />
                           <span className="text-sm text-gray-900">
-                            {member.profile.full_name || member.profile.email}
+                            {member.profile?.full_name || member.profile?.email || 'Unknown User'}
                           </span>
                           {splitType === 'custom' && selectedMembers.includes(member.user_id) && (
                             <input

@@ -356,7 +356,7 @@ export default function AddExpenseButton({ groupId, members, currency }: AddExpe
                           <span className="text-sm text-gray-900">
                             {member.status === 'pending'
                               ? `${member.pending_email} (Pending)`
-                              : (member.profile.full_name || member.profile.email)}
+                              : (member.profile?.full_name || member.profile?.email || 'Unknown User')}
                           </span>
                           {splitType === 'custom' && selectedMembers.includes(member.user_id) && (
                             <input

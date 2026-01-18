@@ -160,7 +160,7 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
                           : 'bg-gray-100 text-gray-600'
                       }`}
                     >
-                      {split.profile.full_name || split.profile.email}
+                      {split.profile?.full_name || split.profile?.email || 'Unknown User'}
                       {!isActive && ' (Inactive)'}: {formatCurrency(split.amount, expense.currency)}
                     </span>
                   )

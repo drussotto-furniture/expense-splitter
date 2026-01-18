@@ -56,7 +56,7 @@ export default function BalancesCard({ expenses, splits, members, groupId, curre
     members.forEach(member => {
       if (member.profile && member.user_id) {
         balanceMap.set(member.user_id, 0)
-        nameMap.set(member.user_id, member.profile.full_name || member.profile.email)
+        nameMap.set(member.user_id, member.profile?.full_name || member.profile?.email || 'Unknown User')
       }
     })
 
