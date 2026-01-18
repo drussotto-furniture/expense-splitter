@@ -22,12 +22,27 @@ export default async function FriendsPage() {
     .eq('id', user.id)
     .single()
 
-  // Count pending invitations
-  const { count: pendingInvitations } = await supabase
+  // Fetch pending group invitations
+  const { data: pendingGroupInvitations } = await supabase
     .from('invitations')
-    .select('*', { count: 'exact', head: true })
+    .select(`
+      *,
+      group:groups (
+        id,
+        name,
+        base_currency
+      ),
+      inviter:profiles!invitations_invited_by_fkey (
+        id,
+        email,
+        full_name
+      )
+    `)
     .eq('invited_email', profile?.email)
     .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+
+  const pendingInvitations = pendingGroupInvitations?.length || 0
 
   // Fetch accepted friends (where user is the requester)
   const { data: sentFriends } = await supabase
@@ -139,6 +154,42 @@ export default async function FriendsPage() {
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Pending Group Invitations */}
+        {pendingInvitations > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Pending Group Invitations ({pendingInvitations})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingGroupInvitations?.map((invitation) => (
+                <div key={invitation.id} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        {invitation.group?.name || 'Unknown Group'}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Invited by {invitation.inviter?.full_name || invitation.inviter?.email || 'Someone'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Currency: {invitation.group?.base_currency || 'USD'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Link
+                      href="/invitations"
+                      className="flex-1 px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-md hover:bg-slate-900 transition-colors text-center"
+                    >
+                      View Details
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Pending Friend Requests */}
         {pendingRequestsCount > 0 && (
           <div className="mb-8">
