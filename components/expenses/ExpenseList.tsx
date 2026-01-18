@@ -96,7 +96,7 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
                 <h3 className="text-lg font-semibold text-gray-900">{expense.description}</h3>
                 <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                   <span className="bg-gray-100 px-2 py-1 rounded">{expense.category}</span>
-                  <span>{new Date(expense.expense_date).toLocaleDateString()}</span>
+                  <span>{new Date(expense.expense_date + 'T00:00:00').toLocaleDateString()}</span>
                 </div>
               </div>
               <div className="flex items-start gap-3">

@@ -49,7 +49,7 @@ export interface Expense {
   notes: string | null
   receipt_url: string | null
   expense_date: string
-  split_type: 'equal' | 'personal' | 'custom' | 'percentage'
+  split_type: 'equal' | 'personal' | 'custom' | 'percentage' | 'shares'
   created_at: string
   updated_at: string
   payer?: Profile

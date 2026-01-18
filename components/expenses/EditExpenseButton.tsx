@@ -47,16 +47,60 @@ export default function EditExpenseButton({ expense, splits, members, groupId }:
   const [splitType, setSplitType] = useState<'equal' | 'personal' | 'custom' | 'percentage' | 'shares'>(
     expense.split_type as any
   )
-  const [selectedMembers, setSelectedMembers] = useState<string[]>(splits.map(s => s.user_id || '').filter(Boolean))
-  const [customAmounts, setCustomAmounts] = useState<Record<string, string>>(
-    splits.reduce((acc, split) => {
-      const memberId = split.user_id || ''
-      if (memberId) acc[memberId] = split.amount.toString()
-      return acc
-    }, {} as Record<string, string>)
-  )
-  const [percentages, setPercentages] = useState<Record<string, string>>({})
-  const [shares, setShares] = useState<Record<string, string>>({})
+
+  // Initialize selectedMembers by finding the members who have splits
+  const [selectedMembers, setSelectedMembers] = useState<string[]>(() => {
+    return splits.map(split => {
+      // Find the member by user_id
+      const member = activeMembers.find(m => m.user_id === split.user_id)
+      return member ? getMemberId(member) : null
+    }).filter(Boolean) as string[]
+  })
+
+  // Initialize custom amounts from splits
+  const [customAmounts, setCustomAmounts] = useState<Record<string, string>>(() => {
+    const amounts: Record<string, string> = {}
+    splits.forEach(split => {
+      const member = activeMembers.find(m => m.user_id === split.user_id)
+      if (member) {
+        amounts[getMemberId(member)] = split.amount.toString()
+      }
+    })
+    return amounts
+  })
+
+  // Initialize percentages from splits if split type is percentage
+  const [percentages, setPercentages] = useState<Record<string, string>>(() => {
+    if (expense.split_type !== 'percentage') return {}
+    const amountNum = expense.amount
+    const percentages: Record<string, string> = {}
+    splits.forEach(split => {
+      const member = activeMembers.find(m => m.user_id === split.user_id)
+      if (member) {
+        const percentage = (split.amount / amountNum) * 100
+        percentages[getMemberId(member)] = percentage.toFixed(1)
+      }
+    })
+    return percentages
+  })
+
+  // Initialize shares from splits if split type is shares
+  const [shares, setShares] = useState<Record<string, string>>(() => {
+    if (expense.split_type !== 'shares') return {}
+    // For shares, we need to calculate the ratio
+    // We'll just use the amounts as shares (simplified approach)
+    const shares: Record<string, string> = {}
+    const minAmount = Math.min(...splits.map(s => s.amount))
+    splits.forEach(split => {
+      const member = activeMembers.find(m => m.user_id === split.user_id)
+      if (member && minAmount > 0) {
+        const shareValue = split.amount / minAmount
+        shares[getMemberId(member)] = shareValue.toFixed(1)
+      }
+    })
+    return shares
+  })
+
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
