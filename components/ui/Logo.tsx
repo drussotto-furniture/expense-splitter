@@ -39,66 +39,70 @@ export default function Logo({ size = 'md', className = '' }: LogoProps) {
           {/* Vertical split line */}
           <line
             x1="24"
-            y1="12"
+            y1="10"
             x2="24"
-            y2="36"
+            y2="38"
             stroke="white"
-            strokeWidth="2"
+            strokeWidth="1.5"
             strokeLinecap="round"
           />
 
           {/* Horizontal split line */}
           <line
-            x1="12"
+            x1="10"
             y1="24"
-            x2="36"
+            x2="38"
             y2="24"
             stroke="white"
-            strokeWidth="2"
+            strokeWidth="1.5"
             strokeLinecap="round"
           />
 
-          {/* Four dollar signs in quadrants */}
+          {/* Four dollar signs in quadrants - positioned away from center */}
           <text
-            x="16"
-            y="20"
+            x="14"
+            y="18.5"
             textAnchor="middle"
-            fill="#94a3b8"
-            fontSize="10"
-            fontWeight="bold"
+            dominantBaseline="middle"
+            fill="#cbd5e1"
+            fontSize="12"
+            fontWeight="600"
             fontFamily="system-ui, -apple-system, sans-serif"
           >
             $
           </text>
           <text
-            x="32"
-            y="20"
+            x="34"
+            y="18.5"
             textAnchor="middle"
-            fill="#94a3b8"
-            fontSize="10"
-            fontWeight="bold"
+            dominantBaseline="middle"
+            fill="#cbd5e1"
+            fontSize="12"
+            fontWeight="600"
             fontFamily="system-ui, -apple-system, sans-serif"
           >
             $
           </text>
           <text
-            x="16"
-            y="32"
+            x="14"
+            y="30.5"
             textAnchor="middle"
-            fill="#94a3b8"
-            fontSize="10"
-            fontWeight="bold"
+            dominantBaseline="middle"
+            fill="#cbd5e1"
+            fontSize="12"
+            fontWeight="600"
             fontFamily="system-ui, -apple-system, sans-serif"
           >
             $
           </text>
           <text
-            x="32"
-            y="32"
+            x="34"
+            y="30.5"
             textAnchor="middle"
-            fill="#94a3b8"
-            fontSize="10"
-            fontWeight="bold"
+            dominantBaseline="middle"
+            fill="#cbd5e1"
+            fontSize="12"
+            fontWeight="600"
             fontFamily="system-ui, -apple-system, sans-serif"
           >
             $
@@ -121,8 +125,6 @@ export default function Logo({ size = 'md', className = '' }: LogoProps) {
 
 // Alternative icon-only version
 export function LogoIcon({ size = 24, className = '' }: { size?: number; className?: string }) {
-  const scale = size / 48
-
   return (
     <svg
       width={size}
@@ -133,12 +135,12 @@ export function LogoIcon({ size = 24, className = '' }: { size?: number; classNa
       className={className}
     >
       <rect x="4" y="4" width="40" height="40" rx="8" fill="#1e293b" />
-      <line x1="24" y1="12" x2="24" y2="36" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <line x1="12" y1="24" x2="36" y2="24" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <text x="16" y="20" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">$</text>
-      <text x="32" y="20" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">$</text>
-      <text x="16" y="32" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">$</text>
-      <text x="32" y="32" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">$</text>
+      <line x1="24" y1="10" x2="24" y2="38" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="10" y1="24" x2="38" y2="24" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      <text x="14" y="18.5" textAnchor="middle" dominantBaseline="middle" fill="#cbd5e1" fontSize="12" fontWeight="600" fontFamily="system-ui, -apple-system, sans-serif">$</text>
+      <text x="34" y="18.5" textAnchor="middle" dominantBaseline="middle" fill="#cbd5e1" fontSize="12" fontWeight="600" fontFamily="system-ui, -apple-system, sans-serif">$</text>
+      <text x="14" y="30.5" textAnchor="middle" dominantBaseline="middle" fill="#cbd5e1" fontSize="12" fontWeight="600" fontFamily="system-ui, -apple-system, sans-serif">$</text>
+      <text x="34" y="30.5" textAnchor="middle" dominantBaseline="middle" fill="#cbd5e1" fontSize="12" fontWeight="600" fontFamily="system-ui, -apple-system, sans-serif">$</text>
     </svg>
   )
 }
