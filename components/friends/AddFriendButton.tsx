@@ -182,9 +182,6 @@ export default function AddFriendButton({ currentUserId }: AddFriendButtonProps)
 
     if (friendError) throw friendError
 
-    // TODO: Create notification for the friend request
-    // This would integrate with the notifications system
-
     setSuccessMessage(`Friend request sent to ${friendName}!`)
     setSearchTerm('')
     setTimeout(() => {

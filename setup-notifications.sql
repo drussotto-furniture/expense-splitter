@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('group_added', 'group_invitation', 'expense_added', 'settlement_requested')),
+  type TEXT NOT NULL CHECK (type IN ('group_added', 'group_invitation', 'expense_added', 'settlement_requested', 'friend_request')),
   title TEXT NOT NULL,
   message TEXT NOT NULL,
   link TEXT, -- URL to navigate to when notification is clicked
@@ -91,3 +91,44 @@ CREATE TRIGGER on_member_added
   AFTER INSERT ON group_members
   FOR EACH ROW
   EXECUTE FUNCTION notify_member_added();
+
+-- Function to create notification when friend request is sent
+CREATE OR REPLACE FUNCTION notify_friend_request()
+RETURNS TRIGGER AS $$
+DECLARE
+  requester_name TEXT;
+BEGIN
+  -- Only notify for pending friend requests
+  IF NEW.status = 'pending' THEN
+    -- Get requester's name
+    SELECT COALESCE(p.full_name, p.email, 'Someone')
+    INTO requester_name
+    FROM profiles p
+    WHERE p.id = NEW.user_id;
+
+    -- Create notification for the friend (recipient)
+    INSERT INTO notifications (user_id, type, title, message, link, metadata)
+    VALUES (
+      NEW.friend_id,
+      'friend_request',
+      'New Friend Request',
+      requester_name || ' sent you a friend request',
+      '/friends',
+      jsonb_build_object(
+        'friend_request_id', NEW.id,
+        'requester_id', NEW.user_id,
+        'requester_name', requester_name
+      )
+    );
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger for friend requests
+DROP TRIGGER IF EXISTS on_friend_request ON friends;
+CREATE TRIGGER on_friend_request
+  AFTER INSERT ON friends
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_friend_request();

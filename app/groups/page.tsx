@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Users, LogOut, Mail } from 'lucide-react'
+import { Plus, Users, LogOut, Mail, UserPlus } from 'lucide-react'
 import CreateGroupButton from '@/components/groups/CreateGroupButton'
 import LogoutButton from '@/components/auth/LogoutButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -62,6 +62,13 @@ export default async function GroupsPage() {
             <p className="text-sm text-gray-600">Welcome, {profile?.full_name || profile?.email}</p>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              href="/friends"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              <UserPlus className="h-4 w-4" />
+              Friends
+            </Link>
             <NotificationBell />
             <Link
               href="/invitations"
