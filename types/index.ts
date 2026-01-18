@@ -102,11 +102,21 @@ export interface SettlementSuggestion {
 export interface Notification {
   id: string
   user_id: string
-  type: 'group_added' | 'group_invitation' | 'expense_added' | 'settlement_requested'
+  type: 'group_added' | 'group_invitation' | 'expense_added' | 'settlement_requested' | 'friend_request'
   title: string
   message: string
   link: string | null
   read: boolean
   created_at: string
   metadata: any
+}
+
+export interface Friend {
+  id: string
+  user_id: string
+  friend_id: string
+  status: 'pending' | 'accepted' | 'declined'
+  created_at: string
+  updated_at: string
+  profile?: Profile
 }

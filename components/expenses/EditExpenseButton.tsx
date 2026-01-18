@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Edit, X } from 'lucide-react'
+import type { Expense } from '@/types'
 
 interface Member {
   id: string
@@ -16,25 +17,13 @@ interface Member {
   }
 }
 
-interface Expense {
-  id: string
-  description: string
-  amount: number
-  currency: string
-  category: string
-  notes: string | null
-  receipt_url: string | null
-  expense_date: string
-  split_type: 'equal' | 'personal' | 'custom' | 'percentage'
-}
-
 interface Split {
   user_id: string
   amount: number
 }
 
 interface EditExpenseButtonProps {
-  expense: Expense
+  expense: Pick<Expense, 'id' | 'description' | 'amount' | 'currency' | 'category' | 'notes' | 'receipt_url' | 'expense_date' | 'split_type'>
   splits: Split[]
   members: Member[]
   groupId: string

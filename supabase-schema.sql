@@ -82,6 +82,18 @@ CREATE TABLE settlements (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Friends (managing friend connections between users)
+CREATE TABLE friends (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  friend_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, friend_id),
+  CHECK (user_id != friend_id)
+);
+
 -- Categories (custom per group or global)
 CREATE TABLE categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -126,6 +138,7 @@ ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expense_splits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settlements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE friends ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for profiles
 CREATE POLICY "Users can view all profiles"
@@ -318,6 +331,25 @@ CREATE POLICY "Users can create categories for their groups"
     )
   );
 
+-- RLS Policies for friends
+CREATE POLICY "Users can view their friends and friend requests"
+  ON friends FOR SELECT
+  USING (
+    user_id = auth.uid() OR friend_id = auth.uid()
+  );
+
+CREATE POLICY "Users can create friend requests"
+  ON friends FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update friend requests they received"
+  ON friends FOR UPDATE
+  USING (friend_id = auth.uid());
+
+CREATE POLICY "Users can delete their own friend connections"
+  ON friends FOR DELETE
+  USING (user_id = auth.uid() OR friend_id = auth.uid());
+
 -- Create indexes for better performance
 CREATE INDEX idx_group_members_user_id ON group_members(user_id);
 CREATE INDEX idx_group_members_group_id ON group_members(group_id);
@@ -328,3 +360,6 @@ CREATE INDEX idx_expense_splits_user_id ON expense_splits(user_id);
 CREATE INDEX idx_settlements_group_id ON settlements(group_id);
 CREATE INDEX idx_invitations_group_id ON invitations(group_id);
 CREATE INDEX idx_invitations_email ON invitations(invited_email);
+CREATE INDEX idx_friends_user_id ON friends(user_id);
+CREATE INDEX idx_friends_friend_id ON friends(friend_id);
+CREATE INDEX idx_friends_status ON friends(status);

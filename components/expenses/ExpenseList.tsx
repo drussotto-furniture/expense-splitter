@@ -111,7 +111,7 @@ export default function ExpenseList({ expenses, splits, groupId, currentUserId, 
                 {expense.paid_by === currentUserId && (
                   <div className="flex items-center gap-2">
                     <EditExpenseButton
-                      expense={expense}
+                      expense={expense as any}
                       splits={expenseSplits.map(s => ({
                         user_id: s.user_id,
                         amount: s.amount
