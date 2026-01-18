@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { Menu, X, Users, UserPlus, Mail, Bell, Home } from 'lucide-react'
 import LogoutButton from '@/components/auth/LogoutButton'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import Logo from '@/components/ui/Logo'
 
 interface AppHeaderProps {
   userName?: string | null
@@ -34,7 +35,7 @@ export default function AppHeader({ userName, userEmail, pendingInvitations = 0 
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/groups" className="flex items-center">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Expense Splitter</h1>
+              <Logo size="sm" />
             </Link>
           </div>
 

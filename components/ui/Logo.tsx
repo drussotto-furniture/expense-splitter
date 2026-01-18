@@ -8,37 +8,25 @@ interface LogoProps {
 
 export default function Logo({ size = 'md', className = '' }: LogoProps) {
   const sizes = {
-    sm: { height: 32, textClass: 'text-lg', subtextClass: 'text-[8px]' },
-    md: { height: 48, textClass: 'text-2xl', subtextClass: 'text-xs' },
-    lg: { height: 64, textClass: 'text-3xl', subtextClass: 'text-sm' },
-    xl: { height: 96, textClass: 'text-5xl', subtextClass: 'text-lg' },
+    sm: { width: 120, height: 32 },
+    md: { width: 180, height: 48 },
+    lg: { width: 240, height: 64 },
+    xl: { width: 360, height: 96 },
   }
 
-  const { height, textClass, subtextClass } = sizes[size]
+  const { width, height } = sizes[size]
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex items-center justify-center ${className}`}>
       {/* Logo Image */}
-      <div className="relative flex-shrink-0" style={{ width: height * 1.2, height }}>
+      <div className="relative" style={{ width, height }}>
         <Image
           src="/carvalytics-logo.png"
-          alt="Carvalytics Logo"
-          width={height * 1.2}
-          height={height}
+          alt="Carvalytics Expense Splitter"
+          fill
           priority
           className="object-contain"
         />
-      </div>
-
-      {/* Text */}
-      <div className="flex flex-col leading-none">
-        <div className={`font-bold ${textClass} tracking-tight`}>
-          <span className="text-slate-900">Carva</span>
-          <span className="text-blue-600">lytics</span>
-        </div>
-        <div className={`text-slate-600 ${subtextClass} tracking-wide uppercase mt-0.5`}>
-          Expense Splitter
-        </div>
       </div>
     </div>
   )
@@ -51,8 +39,7 @@ export function LogoIcon({ size = 48, className = '' }: { size?: number; classNa
       <Image
         src="/carvalytics-icon.png"
         alt="Carvalytics"
-        width={size}
-        height={size}
+        fill
         priority
         className="object-contain"
       />
