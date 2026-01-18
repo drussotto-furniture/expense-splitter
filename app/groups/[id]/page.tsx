@@ -191,7 +191,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
                     </div>
                     {group.created_by === user.id &&
                      member.user_id !== user.id &&
-                     member.is_active !== false && (
+                     (member.status === 'pending' || member.is_active !== false) && (
                       <RemoveMemberButton
                         memberId={member.id}
                         memberName={
