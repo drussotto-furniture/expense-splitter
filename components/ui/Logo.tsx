@@ -17,7 +17,7 @@ export default function Logo({ size = 'md', className = '' }: LogoProps) {
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      {/* Icon: Abstract split/share symbol */}
+      {/* Icon: Split/divide symbol with currency */}
       <div className="relative flex-shrink-0">
         <svg
           width={icon}
@@ -26,36 +26,78 @@ export default function Logo({ size = 'md', className = '' }: LogoProps) {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Three interconnected circles representing shared expenses */}
-          <circle
-            cx="24"
-            cy="14"
-            r="10"
+          {/* Square container with rounded corners */}
+          <rect
+            x="4"
+            y="4"
+            width="40"
+            height="40"
+            rx="8"
             fill="#1e293b"
-            opacity="0.9"
-          />
-          <circle
-            cx="14"
-            cy="30"
-            r="10"
-            fill="#334155"
-            opacity="0.85"
-          />
-          <circle
-            cx="34"
-            cy="30"
-            r="10"
-            fill="#475569"
-            opacity="0.85"
           />
 
-          {/* Dollar sign in center */}
+          {/* Vertical split line */}
+          <line
+            x1="24"
+            y1="12"
+            x2="24"
+            y2="36"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+
+          {/* Horizontal split line */}
+          <line
+            x1="12"
+            y1="24"
+            x2="36"
+            y2="24"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+
+          {/* Four dollar signs in quadrants */}
           <text
-            x="24"
-            y="28"
+            x="16"
+            y="20"
             textAnchor="middle"
-            fill="white"
-            fontSize="20"
+            fill="#94a3b8"
+            fontSize="10"
+            fontWeight="bold"
+            fontFamily="system-ui, -apple-system, sans-serif"
+          >
+            $
+          </text>
+          <text
+            x="32"
+            y="20"
+            textAnchor="middle"
+            fill="#94a3b8"
+            fontSize="10"
+            fontWeight="bold"
+            fontFamily="system-ui, -apple-system, sans-serif"
+          >
+            $
+          </text>
+          <text
+            x="16"
+            y="32"
+            textAnchor="middle"
+            fill="#94a3b8"
+            fontSize="10"
+            fontWeight="bold"
+            fontFamily="system-ui, -apple-system, sans-serif"
+          >
+            $
+          </text>
+          <text
+            x="32"
+            y="32"
+            textAnchor="middle"
+            fill="#94a3b8"
+            fontSize="10"
             fontWeight="bold"
             fontFamily="system-ui, -apple-system, sans-serif"
           >
@@ -79,6 +121,8 @@ export default function Logo({ size = 'md', className = '' }: LogoProps) {
 
 // Alternative icon-only version
 export function LogoIcon({ size = 24, className = '' }: { size?: number; className?: string }) {
+  const scale = size / 48
+
   return (
     <svg
       width={size}
@@ -88,20 +132,13 @@ export function LogoIcon({ size = 24, className = '' }: { size?: number; classNa
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      <circle cx="24" cy="14" r="10" fill="#1e293b" opacity="0.9" />
-      <circle cx="14" cy="30" r="10" fill="#334155" opacity="0.85" />
-      <circle cx="34" cy="30" r="10" fill="#475569" opacity="0.85" />
-      <text
-        x="24"
-        y="28"
-        textAnchor="middle"
-        fill="white"
-        fontSize="20"
-        fontWeight="bold"
-        fontFamily="system-ui, -apple-system, sans-serif"
-      >
-        $
-      </text>
+      <rect x="4" y="4" width="40" height="40" rx="8" fill="#1e293b" />
+      <line x1="24" y1="12" x2="24" y2="36" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <line x1="12" y1="24" x2="36" y2="24" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <text x="16" y="20" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">$</text>
+      <text x="32" y="20" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">$</text>
+      <text x="16" y="32" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">$</text>
+      <text x="32" y="32" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold" fontFamily="system-ui, -apple-system, sans-serif">$</text>
     </svg>
   )
 }
