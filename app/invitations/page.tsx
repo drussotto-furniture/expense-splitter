@@ -39,7 +39,14 @@ export default async function InvitationsPage() {
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
-  const invitationCount = invitations?.length || 0
+  // Normalize the data structure (Supabase can return arrays or objects for foreign keys)
+  const normalizedInvitations = invitations?.map((inv: any) => ({
+    ...inv,
+    group: Array.isArray(inv.group) ? inv.group[0] : inv.group,
+    inviter: Array.isArray(inv.inviter) ? inv.inviter[0] : inv.inviter,
+  }))
+
+  const invitationCount = normalizedInvitations?.length || 0
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -51,9 +58,9 @@ export default async function InvitationsPage() {
 
       {/* Main content */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {invitations && invitations.length > 0 ? (
+        {normalizedInvitations && normalizedInvitations.length > 0 ? (
           <div className="space-y-4">
-            {invitations.map((invitation: any) => (
+            {normalizedInvitations.map((invitation: any) => (
               <InvitationCard
                 key={invitation.id}
                 invitation={invitation}
